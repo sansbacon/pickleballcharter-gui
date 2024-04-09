@@ -24,6 +24,14 @@ class TouchscreenApp(QMainWindow):
         self.db_handler = DatabaseHandler(db_path)
         self.initUI()
         self.setPalette(AppPalette())
+        self.shots = {
+            1: ['Serve'],
+            2: ['Return'],
+            3: ['Drop', 'Drive'],
+            4: ['Fourth Shot'],
+            5: ['Transition', 'Dink-A', 'Dink-B', 'Attack-A','Attack-B', 'Defend', 'Counter', 'Erne', 'Putaway', 'Lob']
+        }
+        self.players = {'A': [], 'B': []}
 
     def initUI(self):
         # Create a menu bar

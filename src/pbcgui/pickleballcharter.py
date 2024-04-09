@@ -1,4 +1,5 @@
 import sys
+
 from PySide6.QtCore import Signal, QDate, Qt
 from PySide6.QtWidgets import QDateEdit, QTableWidget, QTabWidget, QMainWindow, QLineEdit, QMenu, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSizePolicy, QGroupBox, QLabel
 from PySide6.QtGui import QAction, QKeySequence, QPalette, QColor

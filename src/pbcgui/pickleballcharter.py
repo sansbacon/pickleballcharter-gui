@@ -1,11 +1,11 @@
 import sys
 
-from PySide6.QtCore import Signal, QDate, Qt
-from PySide6.QtWidgets import QDateEdit, QTableWidget, QTabWidget, QMainWindow, QLineEdit, QMenu, QApplication, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSizePolicy, QGroupBox, QLabel
-from PySide6.QtGui import QAction, QKeySequence, QPalette, QColor
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QPushButton
 
 from charting_widgets import ChartGameWidget
 from db import DatabaseHandler
+from entities import Game
 from menus import AppMenuBar
 from palettes import AppPalette
 from utility import next_possible_scores
@@ -17,24 +17,20 @@ class TouchscreenApp(QMainWindow):
 
     score_changed = Signal(tuple)
 
-    def __init__(self, db_path:str = 'pickleballcharter.db'):
+    def __init__(self, db_path:str = None):
         super().__init__()
-        self.score = (0, 0, 2)
-        self.buttons = []
-        self.button_states = {}
-        self.db_handler = DatabaseHandler(db_path)
+        # Create the UI
         self.initUI()
-        self.setPalette(AppPalette())
-        self.shots = {
-            1: ['Serve'],
-            2: ['Return'],
-            3: ['Drop', 'Drive'],
-            4: ['Fourth Shot'],
-            5: ['Transition', 'Dink-A', 'Dink-B', 'Attack-A','Attack-B', 'Defend', 'Counter', 'Erne', 'Putaway', 'Lob']
-        }
-        self.players = {'A': [], 'B': []}
+
+        # Instantiate class variables 
+        self.current_score = (0, 0, 2)
+        self.db_handler = DatabaseHandler(db_path)
+        self.game = Game(*[None for _ in range(6)])
 
     def initUI(self):
+        # Set the palette
+        self.setPalette(AppPalette())
+
         # Create a menu bar
         menu_bar = AppMenuBar(self)
         self.setMenuBar(menu_bar)  # Set the menu bar of the main window
@@ -44,8 +40,7 @@ class TouchscreenApp(QMainWindow):
 
         # Initialize the first tab
         self.setup_game_widget = SetupGameWidget(self)
-        self.setup_game_widget.newGameRequested.connect(self.create_new_game)  # Connect to the create_new_game method
-        self.setup_game_widget.loadGameRequested.connect(self.load_existing_game)  # Connect to the load_existing_game method
+        self.setup_game_widget.newGameRequested.connect(self.create_new_game)
         self.tab_widget.addTab(self.setup_game_widget, "Setup Game")
         
         # Initialize the second tab
@@ -56,36 +51,18 @@ class TouchscreenApp(QMainWindow):
         self.setCentralWidget(self.tab_widget)
 
     def create_new_game(self):
-        # Code to create a new game goes here
-        pass
+        # Read the tabs and fill out the game object
+        teams = {
+            "A": [self.setup_game_widget.player_edits[0].text(), self.setup_game_widget.player_edits[1].text()],
+            "B": [self.setup_game_widget.player_edits[2].text(), self.setup_game_widget.player_edits[3].text()]
+        }
 
-    def load_existing_game(self):
-        # Code to load an existing game goes here
-        pass
-
-    def update_buttons(self):
-        # Clear the Score section
-        self.score_section_layout.clear()
-
-        if self.score == (0, 0, 2):
-            # If the score is 0,0,2, display a single button with the score
-            button = QPushButton("0-0-2")
-            self.score_section_layout.addWidget(button)
-        else:
-            # For any other score, display buttons with the possible next scores
-            possible_scores = next_possible_scores(self.score)
-            for new_score in possible_scores:
-                score_str = '-'.join([str(s) for s in new_score])
-                button = QPushButton(score_str)
-                self.score_section_layout.addWidget(button)
-
-    def update_button_state(self, button, checked):
-        # Update the button's state in the dictionary
-        self.button_states[button] = checked
+        self.game.teams = teams
 
     def update_score(self, new_score):
-        self.score = new_score
-        self.score_changed.emit(self.score)  # Emit the score_changed signal
+        """Update the score and emits the score_changed signal"""
+        self.current_score = new_score
+        self.score_changed.emit(self.current_score)
 
 
 if __name__ == "__main__":

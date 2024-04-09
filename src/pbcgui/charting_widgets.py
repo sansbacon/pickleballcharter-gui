@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QButtonGroup
 
 
 class ChartGameWidget(QWidget):
@@ -39,8 +39,8 @@ class ChartGameWidget(QWidget):
         # Left 1 - Section 1 - Score
         score_section = QGroupBox('Score')
         score_section_layout = QVBoxLayout()
-        score_button = QPushButton("0-0-2")
-        score_section_layout.addWidget(score_button)
+        self.score_button = QPushButton("0-0-2")
+        score_section_layout.addWidget(self.score_button)
         score_section.setLayout(score_section_layout)
         first_column.addWidget(score_section)
 
@@ -50,6 +50,9 @@ class ChartGameWidget(QWidget):
         player_section.setLayout(player_section_layout)
         first_column.addWidget(player_section)
 
+        self.player_button_group = QButtonGroup()
+        self.player_button_group.setExclusive(True)
+
         for team in ["A", "B"]:
             row_layout = QHBoxLayout()
             player_section_layout.addLayout(row_layout)
@@ -57,35 +60,35 @@ class ChartGameWidget(QWidget):
                 player_button = QPushButton(f"Player {team}{i}")
                 player_button.setCheckable(True)
                 row_layout.addWidget(player_button)
+                self.player_button_group.addButton(player_button)
 
-        # Left 3 - Section 3 - Stack
         stack_section = QGroupBox("Stack")
         stack_section_layout = QVBoxLayout()
         stack_section.setLayout(stack_section_layout)
         first_column.addWidget(stack_section)
 
+        # create the button group
+        self.stack_button_group = QButtonGroup()
+        self.stack_button_group.setExclusive(True)
+
         # Create the first row of buttons
         first_row_layout = QHBoxLayout()
         stack_section_layout.addLayout(first_row_layout)
 
-        button_a2_left = QPushButton("A2 Left")
-        button_a2_left.setCheckable(True)
-        first_row_layout.addWidget(button_a2_left)
-
-        button_a2_right = QPushButton("A2 Right")
-        button_a2_right.setCheckable(True)
-        first_row_layout.addWidget(button_a2_right)
+        for stacks in ['A2 Left', 'A2 Right']:
+            button = QPushButton(stacks)
+            button.setCheckable(True)
+            first_row_layout.addWidget(button)
+            self.stack_button_group.addButton(button)
 
         # Create the second row of buttons
         second_row_layout = QHBoxLayout()
         stack_section_layout.addLayout(second_row_layout)
 
-        button_b2_left = QPushButton("B2 Left")
-        button_b2_left.setCheckable(True)
-        second_row_layout.addWidget(button_b2_left)
-
-        button_b2_right = QPushButton("B2 Right")
-        button_b2_right.setCheckable(True)
-        second_row_layout.addWidget(button_b2_right)
-
+        for stacks in ['B2 Left', 'B2 Right']:
+            button = QPushButton(stacks)
+            button.setCheckable(True)
+            second_row_layout.addWidget(button)
+            self.stack_button_group.addButton(button)
+            
         return first_column

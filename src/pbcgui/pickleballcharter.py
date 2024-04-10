@@ -28,7 +28,7 @@ class TouchscreenApp(QMainWindow):
         self.game = Game(*[None for _ in range(6)])
 
         # setup event handlers
-        self.chart_game_widget.shots_button_group.buttonClicked.connect(self.process_shot_button_click)
+        #self.chart_game_widget.shots_button_group.buttonClicked.connect(self.process_shot_button_click)
 
 
     def initUI(self):

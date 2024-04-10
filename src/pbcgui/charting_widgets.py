@@ -1,4 +1,7 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QButtonGroup
+from PySide6.QtWidgets import QWidget, QSizePolicy, QGridLayout, QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QButtonGroup
+from PySide6.QtGui import QKeySequence
+
+from entities import ShotTypes
 
 
 class ChartGameWidget(QWidget):
@@ -23,13 +26,47 @@ class ChartGameWidget(QWidget):
     def main_column(self):
         """Creates the main column with the following sections:"""
         main_column = QVBoxLayout()
-        for section_name in ["Shots", "Side", "Effect", "Rally Winner"]:
+
+        # Create the "Shots" section
+        shots_section = QGroupBox("Shots")
+        shots_section_layout = QGridLayout()
+        shots_section.setLayout(shots_section_layout)
+        main_column.addWidget(shots_section)
+
+        # Add shots buttons
+        self.shots_button_group = QButtonGroup()
+        self.shots_button_group.setExclusive(True)
+        for idx, shot_type in enumerate(ShotTypes):
+            j = idx % 5
+            i = idx // 5
+            button = QPushButton(f"{shot_type.value} - {shot_type.name}")
+            button.setCheckable(True)
+            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            if idx < 9:
+                button.setShortcut(QKeySequence(f"Ctrl+{idx+1}"))
+            elif idx == 9:
+                button.setShortcut(QKeySequence(f"Ctrl+0"))
+            else:
+                button.setShortcut(QKeySequence(f"Ctrl+Alt+{idx-9}"))
+            shots_section_layout.addWidget(button, j, i)
+            self.shots_button_group.addButton(button)
+
+        ############
+        # Create the other sections
+        # Create a horizontal layout for the "Side" and "Effect" sections
+        side_effect_layout = QHBoxLayout()
+
+        for section_name in ["Side", "Effect", "Rally Winner"]:
             section = QGroupBox(section_name)
             section_layout = QVBoxLayout()
             section.setLayout(section_layout)
-            main_column.addWidget(section)
-        return main_column
+            side_effect_layout.addWidget(section)
 
+        # Add the horizontal layout to the main column
+        main_column.addLayout(side_effect_layout)
+
+        return main_column
+    
     def sidebar(self):
         """Creates the sidebar column with the following sections:"""
         # Create the first column with three sections

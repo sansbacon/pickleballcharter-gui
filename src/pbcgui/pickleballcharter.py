@@ -27,6 +27,10 @@ class TouchscreenApp(QMainWindow):
         self.db_handler = DatabaseHandler(db_path)
         self.game = Game(*[None for _ in range(6)])
 
+        # setup event handlers
+        self.chart_game_widget.shots_button_group.buttonClicked.connect(self.process_shot_button_click)
+
+
     def initUI(self):
         # Set the palette
         self.setPalette(AppPalette())
@@ -58,6 +62,11 @@ class TouchscreenApp(QMainWindow):
         }
 
         self.game.teams = teams
+
+    def process_shot_button_click(self, button):
+        """Process the shot button click event"""
+        # Get the text of the button
+        return button.text()
 
     def update_score(self, new_score):
         """Update the score and emits the score_changed signal"""

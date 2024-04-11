@@ -1,8 +1,12 @@
-from PySide6.QtWidgets import QWidget, QSizePolicy, QGridLayout, QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QButtonGroup
+from PySide6.QtWidgets import (
+    QWidget, QSizePolicy, QGridLayout, QVBoxLayout, QHBoxLayout, 
+    QGroupBox, QPushButton, QButtonGroup)
 from PySide6.QtGui import QKeySequence
 from PySide6.QtCore import Qt, Signal
 
 from .entities import ShotTypes
+from .utility import unique_names
+
 
 class ChartSidebarWidget(QWidget):
     """A widget for the sidebar of the charting tab"""
@@ -25,6 +29,7 @@ class ChartSidebarWidget(QWidget):
 
         self.player_button_group = QButtonGroup()
         self.player_button_group.setExclusive(True)
+        self.player_buttons = []
 
         player_shortcuts = {
             ('A', 1): QKeySequence(Qt.ControlModifier | Qt.Key_Up),
@@ -43,6 +48,7 @@ class ChartSidebarWidget(QWidget):
                 player_button.setShortcut(player_shortcuts[(team, i)])
                 row_layout.addWidget(player_button)
                 self.player_button_group.addButton(player_button)
+                self.player_buttons.append(player_button)
 
         self._player_section = player_section
         return player_section
@@ -74,6 +80,7 @@ class ChartSidebarWidget(QWidget):
         # create the button group
         self.stack_button_group = QButtonGroup()
         self.stack_button_group.setExclusive(True)
+        self.stack_buttons = []
 
         # Create the first row of buttons
         first_row_layout = QHBoxLayout()
@@ -86,13 +93,14 @@ class ChartSidebarWidget(QWidget):
             'B2 Right': QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_Down)
         }
 
-        for stacks in ['A2 Left', 'A2 Right']:
+        for idx, stacks in enumerate(['A2 Left', 'A2 Right']):
             button = QPushButton(stacks)
             button.setCheckable(True)
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             button.setShortcut(QKeySequence(stack_shortcuts[stacks]))
-            first_row_layout.addWidget(button)
-            self.stack_button_group.addButton(button)
+            self.stack_buttons.append(button)
+            first_row_layout.addWidget(self.stack_buttons[idx])
+            self.stack_button_group.addButton(self.stack_buttons[idx])
 
         # Create the second row of buttons
         second_row_layout = QHBoxLayout()
@@ -103,8 +111,20 @@ class ChartSidebarWidget(QWidget):
             button.setCheckable(True)
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             button.setShortcut(QKeySequence(stack_shortcuts[stacks]))
+            self.stack_buttons.append(button)
             second_row_layout.addWidget(button)
             self.stack_button_group.addButton(button)
+
+        # Create the third row of buttons
+        third_row_layout = QHBoxLayout()
+        stack_section_layout.addLayout(third_row_layout)
+        button = QPushButton('No Stack')
+        button.setCheckable(True)
+        button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        button.setChecked(True)
+        self.stack_buttons.append(button)
+        third_row_layout.addWidget(button)
+        self.stack_button_group.addButton(button)
 
         self._stack_section = stack_section
         return stack_section
@@ -131,7 +151,6 @@ class ChartSidebarWidget(QWidget):
         self._sidebar = first_column    
         return first_column
 
-
 class ChartGameWidget(QWidget):
 
     def __init__(self, parent=None):
@@ -155,7 +174,6 @@ class ChartGameWidget(QWidget):
 
         # event handling
         #self.rally_over.connect(self.handle_rally_over)
-
 
     def main_column(self):
         """Creates the main column with the following sections:"""
@@ -201,7 +219,20 @@ class ChartGameWidget(QWidget):
 
         return main_column
     
-
     def handle_rally_over(self):
         # This method will be called when the rally is over
         pass
+
+    def update_player_buttons(self, players):
+        """Updates the text of the stack buttons"""
+        for idx, player in enumerate(unique_names([p.split()[0] for p in players])):
+            self.sidebar.player_buttons[idx].setText(player)
+        
+    def update_stack_buttons(self, players):
+        """Updates the text of the stack buttons"""
+        players = unique_names([p.split()[0] for p in players])
+        self.sidebar.stack_buttons[0].setText(f'{players[1]} Left')
+        self.sidebar.stack_buttons[1].setText(f'{players[1]} Right')
+        self.sidebar.stack_buttons[2].setText(f'{players[3]} Right')
+        self.sidebar.stack_buttons[3].setText(f'{players[3]} Left')
+ 

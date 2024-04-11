@@ -44,6 +44,10 @@ class TouchscreenApp(QMainWindow):
             for game in self.games_db.get_games():
                 self.setup_game_widget.log_widget.append(json.dumps(game, cls=DateTimeEncoder, indent=4))
 
+        # Connect signals
+        self.setup_game_widget.newGameRequested.connect(self.chart_game_widget.update_player_buttons)
+        self.setup_game_widget.newGameRequested.connect(self.chart_game_widget.update_stack_buttons)
+        self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
 
     def initUI(self):
         # Set the palette
@@ -73,16 +77,19 @@ class TouchscreenApp(QMainWindow):
         self.game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
         self.game.game_location = self.setup_game_widget.game_location_edit.text()
         self.game.teams = {
-            "A": [self.setup_game_widget.player_edits[0].text(), self.setup_game_widget.player_edits[1].text()],
-            "B": [self.setup_game_widget.player_edits[2].text(), self.setup_game_widget.player_edits[3].text()]
+            "A": [self.setup_game_widget.player_combos[0].currentText(), self.setup_game_widget.player_combos[1].currentText()],
+            "B": [self.setup_game_widget.player_combos[2].currentText(), self.setup_game_widget.player_combos[3].currentText()]
         }
-        self.setup_game_widget.log_console.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))
+        self.setup_game_widget.log_widget.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))
         self.games_db.insert_game(self.game)
 
     def process_shot_button_click(self, button):
         """Process the shot button click event"""
         # Get the text of the button
         return button.text()
+
+    def switch_to_charting(self):
+        self.tab_widget.setCurrentIndex(1)
 
     def update_score(self, new_score):
         """Update the score and emits the score_changed signal"""

@@ -29,13 +29,13 @@ class ShotTypes(Enum):
     RETURN = 2
     DROP = 3
     DRIVE = 4
-    FOURTH = 5
-    TRANSITION = 6
+    ROLL_VOLLEY = 5
+    PUNCH_VOLLEY = 6
     DINK_AIR = 7
     DINK_BOUNCE = 8
     ATTACK_AIR = 9
     ATTACK_BOUNCE = 10
-    DEFEND = 11
+    RESET = 11
     COUNTER = 12
     ERNE = 13
     LOB = 14

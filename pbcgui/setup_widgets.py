@@ -25,7 +25,7 @@ class LogWidget(QWidget):
 
 class SetupGameWidget(QWidget):
 
-    newGameRequested = Signal()
+    newGameRequested = Signal(list)
 
     def __init__(self, players, parent=None):
         super(SetupGameWidget, self).__init__(parent)
@@ -104,7 +104,6 @@ class SetupGameWidget(QWidget):
 
         # Add a form for creating a new game or reading an existing game
         self.new_game_button = QPushButton("Create New Game")
-            # In your setup code
         self.new_game_button.clicked.connect(self.validate_and_emit_new_game)
         button_layout.addWidget(self.new_game_button)
 
@@ -147,4 +146,4 @@ class SetupGameWidget(QWidget):
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Duplicated.")
             return
 
-        self.newGameRequested.emit()
+        self.newGameRequested.emit(values)

@@ -1,6 +1,15 @@
-from dataclasses import dataclass, fields, _MISSING_TYPE
+from dataclasses import dataclass, fields, _MISSING_TYPE, asdict
 import datetime
 from enum import Enum
+import json
+from uuid import uuid4
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 class ShotOutcomes(Enum):
@@ -36,12 +45,12 @@ class ShotTypes(Enum):
 @dataclass
 class Game:
     """Data class for a game"""
-    game_id: int
-    game_date: datetime
-    game_location: str
-    teams: dict
-    final_score: tuple
-    rallies: dict
+    game_id: str = str(uuid4())
+    game_date: datetime = None
+    game_location: str = None
+    teams: dict = None
+    final_score: tuple = None
+    rallies: dict = None
 
     def __post_init__(self):
         # Loop through the fields
@@ -50,8 +59,11 @@ class Game:
             if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
                 setattr(self, field.name, field.default)
 
+    def to_dict(self):
+        return {k: str(v) for k, v in asdict(self).items()}
 
-dataclass
+
+@dataclass
 class Rally:
     """Data class for a rally"""
     rally_id: int

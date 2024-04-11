@@ -1,0 +1,7 @@
+PySide6
+platformdirs
+tinydb
+orjson
+BetterJSONStoragenumpy
+tabulate
+pandas

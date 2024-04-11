@@ -3,7 +3,7 @@ from PySide6.QtCore import QDate, Signal
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QGridLayout,
     QPushButton, QSizePolicy, QGroupBox, QTextEdit,
-    QLabel, QDateEdit, QLineEdit
+    QLabel, QDateEdit, QLineEdit, QSpacerItem
 )
 
 
@@ -50,15 +50,36 @@ class SetupGameWidget(QWidget):
         info_section_layout.addWidget(game_location_label)
         info_section_layout.addWidget(self.game_location_edit)
 
-        # Players   
-        for idx, widget in enumerate(self.player_edits):
-            player_label = QLabel(f"Player {idx + 1}")
-            widget.editingFinished.connect(self.log_text_change)
-            info_section_layout.addWidget(player_label)
-            info_section_layout.addWidget(widget)
+        info_section_layout.addItem(QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         # Add the section to the main layout
         left_column.addWidget(info_section)
+
+        # Players  
+        # Create the "Players" section
+        players_section = QGroupBox("Player Information")
+        players_section_layout = QVBoxLayout() 
+        players_section.setLayout(players_section_layout)
+
+        # Add instructions at the top of the box
+        msg = ["<b>Enter player names in the fields below.</b>",
+               "<b>Player one should be the initial server, player two is server's partner.</b>",
+                "<b>Player three is the returner, and player four is the returner's partner.</b>"]
+
+        players_section_layout.addWidget(QLabel('<br>'.join(msg)))
+
+        # Add a spacer for padding
+        players_section_layout.addItem(QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        # now add player line edits
+        for idx, widget in enumerate(self.player_edits):
+            player_label = QLabel(f"Player {idx + 1}")
+            widget.editingFinished.connect(self.log_text_change)
+            players_section_layout.addWidget(player_label)
+            players_section_layout.addWidget(widget)
+
+        # Add the section to the main layout
+        left_column.addWidget(players_section)
         
         # BUTTON SECTION
         # Create a horizontal layout for the buttons
@@ -66,9 +87,9 @@ class SetupGameWidget(QWidget):
         left_column.addLayout(button_layout)
 
         # Add a form for creating a new game or reading an existing game
-        new_game_button = QPushButton("Create New Game")
-        new_game_button.clicked.connect(self.newGameRequested.emit) 
-        button_layout.addWidget(new_game_button)
+        self.new_game_button = QPushButton("Create New Game")
+        self.new_game_button.clicked.connect(self.newGameRequested.emit)
+        button_layout.addWidget(self.new_game_button)
 
         # LOG SECTION
         log_section = QGroupBox("Log")

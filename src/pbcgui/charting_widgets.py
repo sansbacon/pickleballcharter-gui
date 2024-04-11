@@ -145,7 +145,7 @@ class ChartGameWidget(QWidget):
         self.sidebar = ChartSidebarWidget()
         hlayout.addWidget(self.sidebar)
         #hlayout.addLayout(self.sidebar)
-        #hlayout.addLayout(self.main_column())
+        hlayout.addLayout(self.main_column())
 
         hlayout.setStretch(0, 25)
         hlayout.setStretch(1, 75)

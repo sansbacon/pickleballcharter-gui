@@ -1,7 +1,9 @@
+import json
 import sys
+from uuid import uuid4
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QPushButton
+from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 
 from charting_widgets import ChartGameWidget
 from db import DatabaseHandler
@@ -22,29 +24,25 @@ class TouchscreenApp(QMainWindow):
         # Create the UI
         self.initUI()
 
-        # Instantiate class variables 
+        # Instance variables 
         self.current_score = (0, 0, 2)
         self.db_handler = DatabaseHandler(db_path)
-        self.game = Game(*[None for _ in range(6)])
-
-        # setup event handlers
-        #self.chart_game_widget.shots_button_group.buttonClicked.connect(self.process_shot_button_click)
-
+        self.game = Game()
 
     def initUI(self):
         # Set the palette
-        self.setPalette(AppPalette())
+        #self.setPalette(AppPalette())
 
         # Create a menu bar
         menu_bar = AppMenuBar(self)
-        self.setMenuBar(menu_bar)  # Set the menu bar of the main window
+        self.setMenuBar(menu_bar)
 
         # Create a tab widget
         self.tab_widget = QTabWidget()
 
         # Initialize the first tab
         self.setup_game_widget = SetupGameWidget(self)
-        self.setup_game_widget.newGameRequested.connect(self.create_new_game)
+        self.setup_game_widget.new_game_button.clicked.connect(self.create_new_game)
         self.tab_widget.addTab(self.setup_game_widget, "Setup Game")
         
         # Initialize the second tab
@@ -56,12 +54,13 @@ class TouchscreenApp(QMainWindow):
 
     def create_new_game(self):
         # Read the tabs and fill out the game object
-        teams = {
+        self.game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
+        self.game.game_location = self.setup_game_widget.game_location_edit.text()
+        self.game.teams = {
             "A": [self.setup_game_widget.player_edits[0].text(), self.setup_game_widget.player_edits[1].text()],
             "B": [self.setup_game_widget.player_edits[2].text(), self.setup_game_widget.player_edits[3].text()]
         }
-
-        self.game.teams = teams
+        self.setup_game_widget.log_console.append(json.dumps(self.game.to_dict()))
 
     def process_shot_button_click(self, button):
         """Process the shot button click event"""

@@ -1,7 +1,15 @@
 from dataclasses import dataclass, fields, _MISSING_TYPE, asdict
 import datetime
 from enum import Enum
+import json
 from uuid import uuid4
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 class ShotOutcomes(Enum):

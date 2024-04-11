@@ -3,26 +3,42 @@ from PySide6.QtCore import QDate, Signal
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QGridLayout,
     QPushButton, QSizePolicy, QGroupBox, QTextEdit,
-    QLabel, QDateEdit, QLineEdit, QSpacerItem
+    QLabel, QDateEdit, QLineEdit, QSpacerItem,
+    QComboBox, QMessageBox, QCompleter
 )
+
+
+class LogWidget(QWidget):
+    """A simple widget that logs text read only"""
+    def __init__(self, parent=None, title="Log"):
+        super(LogWidget, self).__init__(parent)
+        self.log_section = QGroupBox(title)
+        self.log_section_layout = QVBoxLayout()
+        self.log_console = QTextEdit()
+        self.log_console.setReadOnly(True)
+        self.log_section_layout.addWidget(self.log_console)
+        self.log_section.setLayout(self.log_section_layout)
+
+    def append(self, text):
+        self.log_console.append(text)
 
 
 class SetupGameWidget(QWidget):
 
     newGameRequested = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, players, parent=None):
         super(SetupGameWidget, self).__init__(parent)
-        self.log_console = QTextEdit()
-        self.log_console.setReadOnly(True)
-
+        
+        # instance variables
+        self.log_widget = LogWidget()
         self.game_date_picker = QDateEdit()
-
         self.game_location_edit = QLineEdit()
         self.game_location_edit.editingFinished.connect(self.log_text_change)
+        self.players = [''] + players
+        self.player_combos = [self.create_player_combo() for _ in range(4)]
 
-        self.player_edits = [QLineEdit() for _ in range(4)]
-        
+        # main layout
         main_layout = QHBoxLayout()
         self.setLayout(main_layout)
 
@@ -71,10 +87,10 @@ class SetupGameWidget(QWidget):
         # Add a spacer for padding
         players_section_layout.addItem(QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
-        # now add player line edits
-        for idx, widget in enumerate(self.player_edits):
+        # now add player combos
+        for idx, widget in enumerate(self.player_combos):
             player_label = QLabel(f"Player {idx + 1}")
-            widget.editingFinished.connect(self.log_text_change)
+            widget.currentTextChanged.connect(self.log_cb_change)
             players_section_layout.addWidget(player_label)
             players_section_layout.addWidget(widget)
 
@@ -88,24 +104,47 @@ class SetupGameWidget(QWidget):
 
         # Add a form for creating a new game or reading an existing game
         self.new_game_button = QPushButton("Create New Game")
-        self.new_game_button.clicked.connect(self.newGameRequested.emit)
+            # In your setup code
+        self.new_game_button.clicked.connect(self.validate_and_emit_new_game)
         button_layout.addWidget(self.new_game_button)
 
         # LOG SECTION
-        log_section = QGroupBox("Log")
-        log_section_layout = QVBoxLayout()
-        log_section_layout.addWidget(self.log_console)
-        log_section.setLayout(log_section_layout)
-        left_column.addWidget(log_section)
+        left_column.addWidget(self.log_widget.log_section)
 
         # RIGHT COLUMN
         right_column = QVBoxLayout()
         main_layout.addLayout(right_column, 67)  
 
+    def create_player_combo(self):
+        combo = QComboBox()
+        combo.setEditable(True)
+        combo.addItems([str(p) for p in self.players])
+        completer = QCompleter()
+        completer.setModel(combo.model())
+        combo.setCompleter(completer)
+        return combo
+
+    def log_cb_change(self, s):
+        self.log_widget.append(s)
+
     def log_text_change(self):
         line_edit = self.sender()
         new_text = line_edit.text()
-        self.log_console.append(new_text)
+        self.log_widget.append(new_text)
 
     def log_date_change(self, new_date):
-        self.log_console.append(new_date.toString())
+        self.log_widget.append(new_date.toString())
+
+    def validate_and_emit_new_game(self):
+        # Replace combobox1, combobox2, combobox3, combobox4 with your actual combobox variable names
+        values = [cb.currentText() for cb in self.player_combos]
+
+        if "" in values:
+            QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Empty.")
+            return
+
+        if len(set(values)) != len(values):
+            QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Duplicated.")
+            return
+
+        self.newGameRequested.emit()

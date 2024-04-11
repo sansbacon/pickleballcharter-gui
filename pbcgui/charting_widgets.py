@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QSizePolicy, QGridLayout, QVBoxLayout, QH
 from PySide6.QtGui import QKeySequence
 from PySide6.QtCore import Qt, Signal
 
-from entities import ShotTypes
+from .entities import ShotTypes
 
 class ChartSidebarWidget(QWidget):
     """A widget for the sidebar of the charting tab"""

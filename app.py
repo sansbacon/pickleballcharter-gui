@@ -1,17 +1,18 @@
 import json
+from pathlib import Path
 import sys
 from uuid import uuid4
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 
-from charting_widgets import ChartGameWidget
-from db import DatabaseHandler
-from entities import Game
-from menus import AppMenuBar
-from palettes import AppPalette
-from utility import next_possible_scores
-from setup_widgets import SetupGameWidget
+from pbcgui.charting_widgets import ChartGameWidget
+from pbcgui.config import user_data_dir
+from pbcgui.db import ChartDb, GamesDb
+from pbcgui.entities import Game, DateTimeEncoder
+from pbcgui.menus import AppMenuBar
+from pbcgui.palettes import AppPalette
+from pbcgui.setup_widgets import SetupGameWidget
 
 
 class TouchscreenApp(QMainWindow):
@@ -19,15 +20,30 @@ class TouchscreenApp(QMainWindow):
 
     score_changed = Signal(tuple)
 
-    def __init__(self, db_path:str = None):
+    def __init__(self, games_db: str = None, chart_db: str = None, testing: bool = False):
         super().__init__()
+        
+        # Instance variables
+        self.base_path = user_data_dir 
+        games_db = games_db if games_db else "games.db"
+        chart_db = chart_db if chart_db else "charts.db"
+        self.games_db = GamesDb((self.base_path / games_db))
+        self.chart_db = ChartDb((self.base_path / chart_db))
+        if testing:
+            self.games_db.create_fake_games()        
+        self.current_score = (0, 0, 2)
+        self.existing_players = self.games_db.get_players()
+        self.existing_games = self.games_db.get_all()
+        self.game = Game()
+
         # Create the UI
         self.initUI()
 
-        # Instance variables 
-        self.current_score = (0, 0, 2)
-        self.db_handler = DatabaseHandler(db_path)
-        self.game = Game()
+        # log data
+        if not testing:
+            for game in self.games_db.get_games():
+                self.setup_game_widget.log_widget.append(json.dumps(game, cls=DateTimeEncoder, indent=4))
+
 
     def initUI(self):
         # Set the palette
@@ -41,7 +57,7 @@ class TouchscreenApp(QMainWindow):
         self.tab_widget = QTabWidget()
 
         # Initialize the first tab
-        self.setup_game_widget = SetupGameWidget(self)
+        self.setup_game_widget = SetupGameWidget(players=self.existing_players)
         self.setup_game_widget.new_game_button.clicked.connect(self.create_new_game)
         self.tab_widget.addTab(self.setup_game_widget, "Setup Game")
         
@@ -60,7 +76,8 @@ class TouchscreenApp(QMainWindow):
             "A": [self.setup_game_widget.player_edits[0].text(), self.setup_game_widget.player_edits[1].text()],
             "B": [self.setup_game_widget.player_edits[2].text(), self.setup_game_widget.player_edits[3].text()]
         }
-        self.setup_game_widget.log_console.append(json.dumps(self.game.to_dict()))
+        self.setup_game_widget.log_console.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))
+        self.games_db.insert_game(self.game)
 
     def process_shot_button_click(self, button):
         """Process the shot button click event"""
@@ -75,6 +92,6 @@ class TouchscreenApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = TouchscreenApp()
+    window = TouchscreenApp(testing=False)
     window.showMaximized()
     sys.exit(app.exec())

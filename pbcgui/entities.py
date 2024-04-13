@@ -48,9 +48,10 @@ class Game:
     game_id: str = str(uuid4())
     game_date: datetime = None
     game_location: str = None
-    teams: dict = None
-    final_score: tuple = None
+    players: list = None
+    final_score: tuple = None # always team 1 then team 2
     rallies: dict = None
+    winner: bool = None
 
     def __post_init__(self):
         # Loop through the fields
@@ -60,7 +61,17 @@ class Game:
                 setattr(self, field.name, field.default)
 
     def to_dict(self):
-        return {k: str(v) for k, v in asdict(self).items()}
+        d = asdict(self)
+        d['teams'] = self.teams()
+        return d
+
+    def teams(self):
+        return {'A': self.players[0:2], 'B': self.players[2:]}
+
+    def winner(self):
+        if not self.final_score:
+            return None
+        return 'A' if self.final_score[0] > self.final_score[1] else 'B'
 
 
 @dataclass

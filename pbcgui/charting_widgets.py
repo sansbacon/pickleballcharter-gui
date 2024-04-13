@@ -5,7 +5,114 @@ from PySide6.QtGui import QKeySequence
 from PySide6.QtCore import Qt, Signal
 
 from .entities import ShotTypes
-from .utility import unique_names
+from .utility import next_score, unique_names
+
+
+class PlayerSectionWidget(QWidget):
+    """A widget for the player section of the sidebar"""
+    
+    def __init__(self, parent=None):
+        super(PlayerSectionWidget, self).__init__(parent)
+        self.player_section = QGroupBox("Player")
+        self.player_section_layout = QVBoxLayout()
+        self.player_section.setLayout(self.player_section_layout)
+    
+        self.player_button_group = QButtonGroup()
+        self.player_button_group.setExclusive(True)
+        self.player_buttons = []
+
+        player_shortcuts = {
+            ('A', 1): QKeySequence(Qt.ControlModifier | Qt.Key_Up),
+            ('A', 2): QKeySequence(Qt.ControlModifier | Qt.Key_Right),
+            ('B', 1): QKeySequence(Qt.ControlModifier | Qt.Key_Left),
+            ('B', 2): QKeySequence(Qt.ControlModifier | Qt.Key_Down),
+        }
+
+        for team in ["A", "B"]:
+            row_layout = QHBoxLayout()
+            self.player_section_layout.addLayout(row_layout)
+            for i in range(1, 3):
+                player_button = QPushButton(f"Player {team}{i}")
+                player_button.setCheckable(True)
+                player_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+                player_button.setShortcut(player_shortcuts[(team, i)])
+                row_layout.addWidget(player_button)
+                self.player_button_group.addButton(player_button)
+                self.player_buttons.append(player_button)
+    
+class ScoreSectionWidget(QWidget):
+    """Creates the score section of the sidebar"""
+
+    rally_over = Signal(tuple)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.score_section = QGroupBox('Score')
+        self.score_section_layout = QVBoxLayout()
+        self.score_section.setLayout(self.score_section_layout)
+
+        self.score_button = QPushButton("0-0-2")
+        self.score_section_layout.addWidget(self.score_button)
+
+        self.server_wins_button = QPushButton("Server Wins")
+        self.score_section_layout.addWidget(self.server_wins_button)
+
+        self.receiver_wins_button = QPushButton("Receiver Wins")
+        self.score_section_layout.addWidget(self.receiver_wins_button)
+
+       # Connect the clicked signal of the buttons to a method that emits rally_over
+        self.server_wins_button.clicked.connect(lambda: self.emit_rally_over("server"))
+        self.receiver_wins_button.clicked.connect(lambda: self.emit_rally_over("receiver"))
+
+    def emit_rally_over(self, winner):
+        score = self.score_button.text().split('-')
+        new_score = next_score(score, winner)
+        self.rally_over.emit('-'.join([str(s) for s in new_score]))
+
+
+class StackSectionWidget(QWidget):
+    """Class to encapsulate stack section for sidear"""
+
+    stacks_possible = [
+        ['A2 Left', 'A2 Right'],
+        ['B2 Left', 'B2 Right'],
+        ['No Stack']
+    ]
+
+    stack_shortcuts = {
+        'A2 Left': QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_Up),
+        'A2 Right': QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_Right),
+        'B2 Left': QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_Left),
+        'B2 Right': QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_Down)
+    }
+
+    def __init__(self, parent=None):
+        super(PlayerSectionWidget, self).__init__(parent)
+        self.section = QGroupBox("Stack")
+        self.layout = QVBoxLayout()   
+        self.section.setLayout(self.layout)
+        
+        # create the button group
+        self.button_group = QButtonGroup()
+        self.button_group.setExclusive(True)
+        self.buttons = []
+
+        # keyboard shortcuts
+    
+        # create the button grid
+        button_grid = QGridLayout()
+        self.layout.addLayout(button_grid)
+
+        for idx, stacks in enumerate(self.stacks_possible):
+            for jdx, stack in enumerate(stacks):
+                button = QPushButton(stack)
+                button.setCheckable(True)
+                button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+                button.setShortcut(self.stack_shortcuts[stack])
+                button_grid.addWidget(button, idx, jdx)
+                self.buttons.append(button)
+                self.button_group.addButton(button)
+
 
 
 class ChartSidebarWidget(QWidget):

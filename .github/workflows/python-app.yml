@@ -21,23 +21,22 @@ jobs:
     steps:
 
       # Check-out repository
-      - uses: actions/checkout@v3
+      - name: Check Out Repository
+        uses: actions/checkout@v3
 
       # Setup Python
-      - uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
       
-      - uses: parafoxia/pip-install@v1
-        with:
-          # Any input that accepts multiple parameters can accept them on a
-          # single line, or across multiple lines.
-          requirements: |
-            requirements.txt
+      - name: Install Dependencies
+        uses: py-actions/py-dependency-install@v4      
       
       # Build python script into a stand-alone exe
-      - uses: Nuitka/Nuitka-Action@main
+      - name: Compile .exe file
+        uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
           script-name: app.py

@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import functools
 from typing import List
 
 from tinydb import TinyDB, Query
@@ -7,36 +8,35 @@ from tinydb.middlewares import CachingMiddleware
 from BetterJSONStorage import BetterJSONStorage
 
 from .entities import Game, Player, Rally
-from .db import DatabaseAdapter
-
+from .db_adapter import DatabaseAdapter
 
 
 @contextmanager
-def managed_db(db_path, storage, **kwargs):
-    if db_path == ':memory:':
-        db = TinyDB(storage=storage)
+def managed_db(db_path, storage):
+    if all((db_path, storage)):
+        db = TinyDB(db_path, storage=storage, access_mode='r+')
     else:
-        db = TinyDB(db_path, storage=storage, **kwargs)
+        db = TinyDB(storage=MemoryStorage)
     try:
         yield db
     finally:
         db.close()
 
 def with_db(func):
+    @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        with managed_db(self.db_path) as db:
+        with managed_db(self.db_path, self.storage) as db:
             return func(self, db, *args, **kwargs)
     return wrapper
 
 
-class TinyDBDatabaseAdapter(DatabaseAdapter):
-    def __init__(self, **kwargs):
-        if 'db_path' in kwargs:
-            self.db_path = kwargs['db_path']
-            self.storage = CachingMiddleware(BetterJSONStorage)
-        else:
-            self.db_path = ':memory:'
-            self.storage = MemoryStorage
+class TinyDBAdapter(DatabaseAdapter):
+    def __init__(self, db_path=None, storage=None, games_table='games', players_table='players', rallies_table='rallies'):
+        self.db_path = db_path
+        self.storage = storage
+        self.games_table = games_table
+        self.players_table = players_table
+        self.rallies_table = rallies_table
 
     @with_db
     def connect(self, db):

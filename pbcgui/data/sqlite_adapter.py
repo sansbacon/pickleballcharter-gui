@@ -3,7 +3,7 @@ from typing import List
 
 import sqlite3
 from .entities import Game, Player, Rally
-from .db import DatabaseAdapter
+from .db_adapter import DatabaseAdapter
 
 
 @contextmanager
@@ -24,12 +24,13 @@ def with_db(func):
     return wrapper
 
 
-class SqliteDatabaseAdapter(DatabaseAdapter):
-    def __init__(self, **kwargs):
-        if 'db_path' in kwargs:
-            self.db_path = kwargs['db_path']
-        else:
-            self.db_path = ':memory:'
+class SQLiteAdapter(DatabaseAdapter):
+    def __init__(self, db_path=None, storage=None, games_table='games', players_table='players', rallies_table='rallies'):
+        self._db_path = db_path
+        self.storage = storage
+        self.games_table = games_table
+        self.players_table = players_table
+        self.rallies_table = rallies_table
 
     @with_db
     def connect(self, db):

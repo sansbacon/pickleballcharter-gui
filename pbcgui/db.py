@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import datetime
 from itertools import chain
 
@@ -7,6 +8,38 @@ from tinydb.middlewares import CachingMiddleware
 from BetterJSONStorage import BetterJSONStorage
 
 from .entities import Game
+
+
+class Database(ABC):
+    @abstractmethod
+    def connect(self):
+        pass
+
+class TinyDBDatabase(Database):
+    def __init__(self, **kwargs):
+        if 'db_path' not in kwargs:
+            raise ValueError("db_path is required")
+        self.db_path = kwargs['db_path']
+
+    def connect(self):
+        return TinyDB(self.db_path, access_mode="r+", storage=CachingMiddleware(BetterJSONStorage))
+
+class SQLiteDatabase(Database):
+    def __init__(self, **kwargs):
+        self.db_path = kwargs.get('db_path')
+
+    def connect(self):
+        import sqlite3
+        return sqlite3.connect(self.db_path)
+
+def DatabaseFactory(db_type, **kwargs):
+    if db_type == 'tinydb':
+        return TinyDBDatabase(**kwargs)
+    elif db_type == 'sqlite':
+        return SQLiteDatabase(**kwargs)
+    else:
+        raise ValueError(f"Unknown database type {db_type}")
+
 
 
 class DatabaseHandler:

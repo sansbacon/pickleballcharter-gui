@@ -43,16 +43,18 @@ class GamesDb (DatabaseHandler):
         return self.get_all()
 
     def get_players(self):
-        with TinyDB(self.db_path, access_mode="r", storage=CachingMiddleware(BetterJSONStorage)) as db:
-            players = chain.from_iterable([game['teams'].values() for game in db.all()])
-            return sorted(set(players))
-
+        try:
+            with TinyDB(self.db_path, access_mode="r", storage=CachingMiddleware(BetterJSONStorage)) as db:
+                players = chain.from_iterable([game['teams'].values() for game in db.all()])
+                return sorted(set(players))
+        except AttributeError:
+            return ['']
+        
     def insert_game(self, game: Game):
         with TinyDB(self.db_path, access_mode="r+", storage=CachingMiddleware(BetterJSONStorage)) as db:
             db.insert(game.to_dict())
         
     
-
 class ChartDb (DatabaseHandler):
     """Database handler for chart database"""
     def load_rallies(self):

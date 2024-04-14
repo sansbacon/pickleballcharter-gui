@@ -6,13 +6,11 @@ from uuid import uuid4
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 
-from pbcgui.charting_widgets import ChartGameWidget
 from pbcgui.config import user_data_dir
 from pbcgui.db import ChartDb, GamesDb
-from pbcgui.entities import Game, DateTimeEncoder
-from pbcgui.menus import AppMenuBar
+from pbcgui.entities import Game, DateTimeEncoder, ShotTypes
 from pbcgui.palettes import AppPalette
-from pbcgui.setup_widgets import SetupGameWidget
+from pbcgui.widgets import *
 
 
 class TouchscreenApp(QMainWindow):
@@ -36,6 +34,19 @@ class TouchscreenApp(QMainWindow):
         self.existing_games = self.games_db.get_all()
         self.game = Game()
 
+        # setup the widgets
+        self.charting_widgets = {
+            "player": PlayerSectionWidget(),
+            "score": ScoreSectionWidget(),
+            "stack": StackSectionWidget(),
+            "other": ChartingOtherWidget(),
+            "shots": ChartingShotsWidget(shot_types=ShotTypes),
+        }
+
+        self.charting_widgets['sidebar'] =  ChartingSidebarWidget(self.charting_widgets['player'], self.charting_widgets['score'], self.charting_widgets['stack'])
+        self.charting_widgets['main'] = ChartingMainWidget(self.charting_widgets['shots'], self.charting_widgets['other'])
+        self.charting_widgets['tab'] = ChartTabWidget(self.charting_widgets['sidebar'], self.charting_widgets['main'])
+
         # Create the UI
         self.initUI()
 
@@ -44,6 +55,10 @@ class TouchscreenApp(QMainWindow):
             for game in self.games_db.get_games():
                 self.setup_game_widget.log_widget.append(json.dumps(game, cls=DateTimeEncoder, indent=4))
 
+        # Connect signals
+        self.setup_game_widget.newGameRequested.connect(self.charting_widgets['player'].update_buttons)
+        self.setup_game_widget.newGameRequested.connect(self.charting_widgets['stack'].update_buttons)
+        self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
 
     def initUI(self):
         # Set the palette
@@ -62,8 +77,7 @@ class TouchscreenApp(QMainWindow):
         self.tab_widget.addTab(self.setup_game_widget, "Setup Game")
         
         # Initialize the second tab
-        self.chart_game_widget = ChartGameWidget(self)
-        self.tab_widget.addTab(self.chart_game_widget, "Chart Game")
+        self.tab_widget.addTab(self.charting_widgets['tab'], "Chart Game")
 
         # Set the tab widget as the central widget
         self.setCentralWidget(self.tab_widget)
@@ -73,16 +87,19 @@ class TouchscreenApp(QMainWindow):
         self.game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
         self.game.game_location = self.setup_game_widget.game_location_edit.text()
         self.game.teams = {
-            "A": [self.setup_game_widget.player_edits[0].text(), self.setup_game_widget.player_edits[1].text()],
-            "B": [self.setup_game_widget.player_edits[2].text(), self.setup_game_widget.player_edits[3].text()]
+            "A": [self.setup_game_widget.player_combos[0].currentText(), self.setup_game_widget.player_combos[1].currentText()],
+            "B": [self.setup_game_widget.player_combos[2].currentText(), self.setup_game_widget.player_combos[3].currentText()]
         }
-        self.setup_game_widget.log_console.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))
+        self.setup_game_widget.log_widget.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))
         self.games_db.insert_game(self.game)
 
     def process_shot_button_click(self, button):
         """Process the shot button click event"""
         # Get the text of the button
         return button.text()
+
+    def switch_to_charting(self):
+        self.tab_widget.setCurrentIndex(1)
 
     def update_score(self, new_score):
         """Update the score and emits the score_changed signal"""

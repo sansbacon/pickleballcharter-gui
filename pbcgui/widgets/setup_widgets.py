@@ -1,7 +1,7 @@
 from PySide6.QtCore import QDate, Signal
 
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QGridLayout,
+    QWidget, QHBoxLayout, QVBoxLayout,
     QPushButton, QSizePolicy, QGroupBox, QTextEdit,
     QLabel, QDateEdit, QLineEdit, QSpacerItem,
     QComboBox, QMessageBox, QCompleter
@@ -25,7 +25,7 @@ class LogWidget(QWidget):
 
 class SetupGameWidget(QWidget):
 
-    newGameRequested = Signal()
+    newGameRequested = Signal(list)
 
     def __init__(self, players, parent=None):
         super(SetupGameWidget, self).__init__(parent)
@@ -104,7 +104,6 @@ class SetupGameWidget(QWidget):
 
         # Add a form for creating a new game or reading an existing game
         self.new_game_button = QPushButton("Create New Game")
-            # In your setup code
         self.new_game_button.clicked.connect(self.validate_and_emit_new_game)
         button_layout.addWidget(self.new_game_button)
 
@@ -136,7 +135,7 @@ class SetupGameWidget(QWidget):
         self.log_widget.append(new_date.toString())
 
     def validate_and_emit_new_game(self):
-        # Replace combobox1, combobox2, combobox3, combobox4 with your actual combobox variable names
+        """Validates against duplicates and empty strings, then emits a signal with the player names."""
         values = [cb.currentText() for cb in self.player_combos]
 
         if "" in values:
@@ -147,4 +146,4 @@ class SetupGameWidget(QWidget):
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Duplicated.")
             return
 
-        self.newGameRequested.emit()
+        self.newGameRequested.emit(values)

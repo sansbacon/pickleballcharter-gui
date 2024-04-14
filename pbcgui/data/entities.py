@@ -87,6 +87,23 @@ class Game:
             return None
         return 'A' if self.final_score[0] > self.final_score[1] else 'B'
 
+dataclass
+class Player:
+    """Data class for a player"""
+    player_id: int
+    first_name: str
+    last_name: str
+    nickname: str
+    gender: str
+
+
+    def __post_init__(self):
+        # Loop through the fields
+        for field in fields(self):
+            # If there is a default and the value of the field is none we can assign a value
+            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
+                setattr(self, field.name, field.default)
+
 
 @dataclass
 class Rally:

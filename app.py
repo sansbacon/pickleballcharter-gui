@@ -7,8 +7,8 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 
 from pbcgui.config import user_data_dir
-from pbcgui.db import ChartDb, GamesDb
-from pbcgui.entities import Game, DateTimeEncoder, ShotTypes
+from pbcgui.data.db import ChartDb, GamesDb
+from pbcgui.data.entities import Game, DateTimeEncoder, ShotTypes
 from pbcgui.palettes import AppPalette
 from pbcgui.widgets import *
 

@@ -1,5 +1,5 @@
 from pbcgui.config import user_data_dir
-from pbcgui.db import *
+from pbcgui.data.db import *
 
 def get_games(db_dir):
     """Gets games from the database"""

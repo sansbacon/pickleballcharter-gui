@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QSizePolicy, QGridLayout, QGroupBox, QPushButton, QButtonGroup
 from PySide6.QtGui import QKeySequence
 
-from ..entities import ShotTypes
+from ..data.entities import ShotTypes
 
 
 class ChartingShotsWidget(QWidget):

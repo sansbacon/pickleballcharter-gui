@@ -5,6 +5,20 @@ import json
 from uuid import uuid4
 
 
+class ExtendedEnum(Enum):
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+    @classmethod
+    def find(cls, to_find):
+        for item in cls:
+            if item.value == to_find:
+                return item.name, item.value
+        return None
+
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
@@ -12,19 +26,19 @@ class DateTimeEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-class ShotOutcomes(Enum):
+class ShotOutcomes(ExtendedEnum):
     WINNER = 1
     CONTINUE = 2
     ERROR_UNFORCED = 3
     ERROR_FORCED = 4
 
 
-class ShotSides(Enum):
+class ShotSides(ExtendedEnum):
     FOREHAND = 1
     BACKHAND = 2
 
 
-class ShotTypes(Enum):
+class ShotTypes(ExtendedEnum):
     SERVE = 1
     RETURN = 2
     DROP = 3

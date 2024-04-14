@@ -2,6 +2,7 @@ from dataclasses import dataclass, fields, _MISSING_TYPE, asdict
 import datetime
 from enum import Enum
 import json
+from typing import List
 from uuid import uuid4
 
 
@@ -57,15 +58,33 @@ class ShotTypes(ExtendedEnum):
 
 
 @dataclass
-class Game:
-    """Data class for a game"""
-    game_id: str = str(uuid4())
-    game_date: datetime = None
-    game_location: str = None
-    players: list = None
-    final_score: tuple = None # always team 1 then team 2
-    rallies: dict = None
-    winner: bool = None
+class Player:
+    """Data class for a player"""
+    player_name: str
+    player_guid: str = str(uuid4())
+
+    def to_dict(self):
+        return asdict(self)
+
+
+@dataclass
+class Shot:
+    """Data class for a shot"""
+    player_guid: str
+    shot_type: str
+
+    def to_dict(self):
+        return asdict(self)
+
+
+@dataclass
+class Rally:
+    """Data class for a rally
+    Score is when the rally starts"""
+    rally_score: tuple
+    shots: List[Shot]
+    rally_winner: str
+    stack: List[str]
 
     def __post_init__(self):
         # Loop through the fields
@@ -75,44 +94,23 @@ class Game:
                 setattr(self, field.name, field.default)
 
     def to_dict(self):
-        d = asdict(self)
-        d['teams'] = self.teams()
-        return d
-
-    def teams(self):
-        return {'A': self.players[0:2], 'B': self.players[2:]}
-
-    def winner(self):
-        if not self.final_score:
-            return None
-        return 'A' if self.final_score[0] > self.final_score[1] else 'B'
-
-dataclass
-class Player:
-    """Data class for a player"""
-    player_id: int
-    first_name: str
-    last_name: str
-    nickname: str
-    gender: str
-
-
-    def __post_init__(self):
-        # Loop through the fields
-        for field in fields(self):
-            # If there is a default and the value of the field is none we can assign a value
-            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
-                setattr(self, field.name, field.default)
+        return {
+            "rally_score": self.rally_score,
+            "shots": [shot.to_dict() for shot in self.shots],
+            "rally_winner": self.rally_winner,
+            "stack": self.stack
+        }
 
 
 @dataclass
-class Rally:
-    """Data class for a rally"""
-    rally_id: int
-    rally_score: tuple
-    shots: list
-    rally_winner: int
-    stack: list
+class Game:
+    """Data class for a game"""
+    game_guid: str = str(uuid4())
+    game_date: datetime = None
+    game_location: str = None
+    players: List[Player] = None
+    rallies: List[Rally] = None
+    final_score: tuple = None # always team 1 then team 2
 
     def __post_init__(self):
         # Loop through the fields
@@ -121,18 +119,12 @@ class Rally:
             if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
                 setattr(self, field.name, field.default)
 
-dataclass
-class Shot:
-    """Data class for a shot"""
-    player_id: int
-    team_id: int
-    shot_type: str
-
-    def __post_init__(self):
-        # Loop through the fields
-        for field in fields(self):
-            # If there is a default and the value of the field is none we can assign a value
-            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
-                setattr(self, field.name, field.default)
-
-
+    def to_dict(self):
+        return {
+            "game_guid": self.game_guid,
+            "game_date": self.game_date,
+            "game_location": self.game_location,
+            "players": [player.to_dict() for player in self.players],
+            "rallies": [rally.to_dict() for rally in self.rallies],
+            "final_score": self.final_score
+        }

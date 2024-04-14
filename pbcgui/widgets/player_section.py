@@ -8,12 +8,20 @@ from ..utility import unique_names
 class PlayerSectionWidget(QWidget):
     """A widget for the player section of the sidebar"""
     
-    def __init__(self, parent=None):
-        super(PlayerSectionWidget, self).__init__(parent)
-        self.player_section = QGroupBox("Player")
-        self.player_section_layout = QVBoxLayout()
-        self.player_section.setLayout(self.player_section_layout)
-    
+    def __init__(self):
+        super().__init__()
+
+        # Create a layout for the section
+        layout = QVBoxLayout()   
+        section = QGroupBox("Player")
+
+        # Create a layout for the section
+        layout = QVBoxLayout()   
+        section = QGroupBox("Player")
+        section_layout = QVBoxLayout() 
+        section.setLayout(section_layout)
+        layout.addWidget(section)
+
         self.player_button_group = QButtonGroup()
         self.player_button_group.setExclusive(True)
         self.buttons = []
@@ -27,7 +35,7 @@ class PlayerSectionWidget(QWidget):
 
         for team in ["A", "B"]:
             row_layout = QHBoxLayout()
-            self.player_section_layout.addLayout(row_layout)
+            section_layout.addLayout(row_layout) 
             for i in range(1, 3):
                 player_button = QPushButton(f"Player {team}{i}")
                 player_button.setCheckable(True)
@@ -36,7 +44,10 @@ class PlayerSectionWidget(QWidget):
                 row_layout.addWidget(player_button)
                 self.player_button_group.addButton(player_button)
                 self.buttons.append(player_button)
-    
+
+        self.setLayout(layout)
+
+
     def update_buttons(self, players):
         """Updates the text of the stack buttons"""
         for idx, player in enumerate(unique_names([p.split()[0] for p in players])):

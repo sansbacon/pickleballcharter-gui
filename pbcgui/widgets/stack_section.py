@@ -25,19 +25,18 @@ class StackSectionWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.section = QGroupBox("Stack")
-        self.layout = QVBoxLayout()   
-        self.section.setLayout(self.layout)
+        layout = QVBoxLayout()   
+        section = QGroupBox("Stack")
+        section_layout = QGridLayout()
+        section.setLayout(section_layout)
+        layout.addWidget(section)
         
         # create the button group
-        self.button_group = QButtonGroup()
-        self.button_group.setExclusive(True)
+        button_group = QButtonGroup()
+        button_group.setExclusive(True)
         self.buttons = []
 
-        # create the button grid
-        button_grid = QGridLayout()
-        self.layout.addLayout(button_grid)
-
+        
         for idx, stacks in enumerate(self.stacks_possible):
             for jdx, stack in enumerate(stacks):
                 button = QPushButton(stack)
@@ -46,9 +45,11 @@ class StackSectionWidget(QWidget):
                 shortcut = self.stack_shortcuts.get(stack)
                 if shortcut:
                     button.setShortcut(shortcut)
-                button_grid.addWidget(button, idx, jdx)
+                section_layout.addWidget(button, idx, jdx)
                 self.buttons.append(button)
-                self.button_group.addButton(button)
+                button_group.addButton(button)
+
+        self.setLayout(layout)  
 
     def update_buttons(self, players):
         """Updates the text of the stack buttons"""

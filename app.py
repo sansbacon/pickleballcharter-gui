@@ -45,7 +45,7 @@ class TouchscreenApp(QMainWindow):
 
         self.charting_widgets['sidebar'] =  ChartingSidebarWidget(self.charting_widgets['player'], self.charting_widgets['score'], self.charting_widgets['stack'])
         self.charting_widgets['main'] = ChartingMainWidget(self.charting_widgets['shots'], self.charting_widgets['other'])
-        self.charting_widgets['tab'] = ChartTabWidget(self.charting_widgets['main'], self.charting_widgets['sidebar'])
+        self.charting_widgets['tab'] = ChartTabWidget(self.charting_widgets['sidebar'], self.charting_widgets['main'])
 
         # Create the UI
         self.initUI()

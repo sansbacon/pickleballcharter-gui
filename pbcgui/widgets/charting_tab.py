@@ -10,7 +10,6 @@ class ChartTabWidget(QWidget):
         self.main_widget = main_widget
 
         vlayout = QVBoxLayout()
-        self.setLayout(vlayout)
 
         # Create a horizontal layout
         hlayout = QHBoxLayout()
@@ -20,3 +19,4 @@ class ChartTabWidget(QWidget):
         hlayout.setStretch(0, 25)
         hlayout.setStretch(1, 75)
         vlayout.addLayout(hlayout)
+        self.setLayout(vlayout)

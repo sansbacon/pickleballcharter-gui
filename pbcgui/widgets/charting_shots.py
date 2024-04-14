@@ -8,12 +8,16 @@ class ChartingShotsWidget(QWidget):
 
     def __init__(self, shot_types: ShotTypes):
         super().__init__()
+        self.shot_types = shot_types
 
         # Create the "Shots" section
+        layout = QGridLayout()
         section = QGroupBox("Shots")
+
+        # Create a layout for the section
         section_layout = QGridLayout()
         section.setLayout(section_layout)
-        self.setLayout(section_layout)
+
         self.buttons = []
 
         # Add shots buttons
@@ -34,6 +38,10 @@ class ChartingShotsWidget(QWidget):
             section_layout.addWidget(button, j, i)
             self.shots_button_group.addButton(button)
             self.buttons.append(button)
+
+        layout.addWidget(section)
+        self.setLayout(layout)
+
 
     def get_selected_shot(self) -> int:
         """Get the selected shot

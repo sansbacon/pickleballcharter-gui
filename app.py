@@ -62,11 +62,13 @@ class TouchscreenApp(QMainWindow):
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['player'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['stack'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
+        self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_score)
+
 
     def initUI(self):
         # Set the palette
         self.setPalette(AppPalette())
-
+        
         # Create a menu bar
         menu_bar = AppMenuBar(self)
         self.setMenuBar(menu_bar)

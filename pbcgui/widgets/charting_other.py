@@ -1,7 +1,10 @@
-from PySide6.QtWidgets import QWidget, QGroupBox, QHBoxLayout, QButtonGroup, QPushButton, QSizePolicy
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QKeySequence
+from PySide6.QtWidgets import QWidget, QGroupBox, QHBoxLayout, QButtonGroup, QPushButton, QSizePolicy
 
 from ..data import ShotOutcomes
+from ..utility import next_score
+
 
 class ShotSideWidget(QWidget):
 
@@ -63,6 +66,8 @@ class ShotOutcomeWidget(QWidget):
 
 class RallyWinnerWidget(QWidget):
 
+    rally_over = Signal(tuple)
+
     def __init__(self):
         super().__init__()
         self.buttons = []
@@ -86,5 +91,11 @@ class RallyWinnerWidget(QWidget):
             section_layout.addWidget(button)
             self.button_group.addButton(button)
             self.buttons.append(button)
-            
+        
+        self.button_group.buttonClicked.connect(self.emit_rally_over)
         self.setLayout(layout)
+
+    def emit_rally_over(self, button):
+        winner = 'server' if button.text() == 'Serving Team' else 'returner'
+        self.rally_over.emit(winner)
+        button.setChecked(False) 

@@ -16,7 +16,7 @@ class ChartTabWidget(QWidget):
         hlayout.addWidget(self.sidebar_widget)
         hlayout.addWidget(self.main_widget)
 
-        hlayout.setStretch(0, 25)
-        hlayout.setStretch(1, 75)
+        hlayout.setStretch(0, 20)
+        hlayout.setStretch(1, 80)
         vlayout.addLayout(hlayout)
         self.setLayout(vlayout)

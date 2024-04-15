@@ -22,8 +22,8 @@ class PlayerSectionWidget(QWidget):
         section.setLayout(section_layout)
         layout.addWidget(section)
 
-        self.player_button_group = QButtonGroup()
-        self.player_button_group.setExclusive(True)
+        self.button_group = QButtonGroup()
+        self.button_group.setExclusive(True)
         self.buttons = []
 
         player_shortcuts = {
@@ -42,11 +42,16 @@ class PlayerSectionWidget(QWidget):
                 player_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
                 player_button.setShortcut(player_shortcuts[(team, i)])
                 row_layout.addWidget(player_button)
-                self.player_button_group.addButton(player_button)
+                self.button_group.addButton(player_button)
                 self.buttons.append(player_button)
 
         self.setLayout(layout)
 
+    def reset_buttons(self):
+        self.button_group.setExclusive(False)  # Disable autoExclusive
+        for button in self.button_group.buttons():
+            button.setChecked(False)
+        self.button_group.setExclusive(True)  # Enable autoExclusive
 
     def update_buttons(self, players):
         """Updates the text of the stack buttons"""

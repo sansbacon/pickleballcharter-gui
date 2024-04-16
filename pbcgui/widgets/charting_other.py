@@ -8,6 +8,8 @@ from ..utility import next_score
 
 class ShotSideWidget(QWidget):
 
+    shot_side_selected = Signal(str)
+
     def __init__(self):
         super().__init__()
         self.buttons = []
@@ -33,6 +35,10 @@ class ShotSideWidget(QWidget):
             self.buttons.append(button)
             
         self.setLayout(layout)
+        self.button_group.buttonClicked.connect(self.emit_shot_side_selected)
+
+    def emit_shot_side_selected(self, button):
+        self.shot_side_selected.emit(button.text())
 
     def reset_buttons(self):
         self.button_group.setExclusive(False)  # Disable autoExclusive
@@ -74,7 +80,6 @@ class ShotOutcomeWidget(QWidget):
         
     def emit_shot_over(self, button):
         self.shot_over.emit(button.text())
-        print('Shot over signal emitted by ShotOutcomeWidget')
         self.reset_buttons()
 
     def reset_buttons(self):
@@ -89,7 +94,6 @@ class RallyWinnerWidget(QWidget):
     # rally over emits 'server' or 'returner' to indicate who won the rally
     # next_server emits an integer to indicate who should serve next
     rally_over = Signal(str)
-    next_server = Signal(int)
 
     def __init__(self):
         super().__init__()
@@ -119,7 +123,7 @@ class RallyWinnerWidget(QWidget):
         
         self.setLayout(layout)
 
-    def emit_rally_winner(self, button):
+    def emit_rally_winner(self, button):       
         winner = 'server' if button.text() == 'Serving Team' else 'returner'
         self.rally_over.emit(winner)
         self.reset_buttons()

@@ -1,10 +1,13 @@
 from PySide6.QtWidgets import QWidget, QSizePolicy, QGridLayout, QGroupBox, QPushButton, QButtonGroup
 from PySide6.QtGui import QKeySequence
+from PySide6.QtCore import Signal
 
 from ..data.entities import ShotTypes
 
 
 class ChartingShotsWidget(QWidget):
+
+    shot_type_selected = Signal(str)
 
     def __init__(self, shot_types: ShotTypes):
         super().__init__()
@@ -41,7 +44,16 @@ class ChartingShotsWidget(QWidget):
 
         layout.addWidget(section)
         self.setLayout(layout)
+        self.button_group.buttonClicked.connect(self.emit_shot_type_selected)
 
+    def emit_shot_type_selected(self, button):
+        """Emit the shot type selected signal
+        
+        Args:
+            button (QPushButton): The button that was clicked
+
+        """
+        self.shot_type_selected.emit(button.text())
 
     def get_selected_shot(self) -> int:
         """Get the selected shot

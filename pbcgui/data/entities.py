@@ -70,8 +70,10 @@ class Player:
 @dataclass
 class Shot:
     """Data class for a shot"""
-    player_guid: str
+    player: str
     shot_type: str
+    shot_side: str
+    shot_outcome: str
 
     def to_dict(self):
         return asdict(self)
@@ -82,7 +84,7 @@ class Rally:
     """Data class for a rally
     Score is when the rally starts"""
     rally_score: tuple
-    rally_winner: str
+    rally_winner: str = None
     shots: List[Shot] = field(default_factory=list)
     stack: List[str] = field(default_factory=list)
 

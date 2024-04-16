@@ -8,7 +8,7 @@ from ..utility import next_score
 
 class ShotSideWidget(QWidget):
 
-    shot_side_selected = Signal(str)
+    shot_side = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -35,10 +35,10 @@ class ShotSideWidget(QWidget):
             self.buttons.append(button)
             
         self.setLayout(layout)
-        self.button_group.buttonClicked.connect(self.emit_shot_side_selected)
+        self.button_group.buttonClicked.connect(self.emit_shot_side)
 
-    def emit_shot_side_selected(self, button):
-        self.shot_side_selected.emit(button.text())
+    def emit_shot_side(self, button):
+        self.shot_side.emit(button.text())
 
     def reset_buttons(self):
         self.button_group.setExclusive(False)  # Disable autoExclusive

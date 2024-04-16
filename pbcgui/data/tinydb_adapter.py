@@ -48,7 +48,11 @@ class TinyDBAdapter(DatabaseAdapter):
     @with_db
     def add_games(self, db, games: List[Game]) -> List[int]:
         table = db.table(self.games_table)
-        return table.insert_multiple(games if isinstance(games, list) else [games])
+        if isinstance(games, list):
+            games = [game.to_dict() for game in games]
+        else:
+            games = [games.to_dict()]
+        return table.insert_multiple(games)
 
     @with_db
     def get_games(self, db) -> List[Game]:

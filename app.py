@@ -7,7 +7,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication
 
 from config import user_data_dir, user_data_file
-from pbcgui.data import database_factory, Game, DateTimeEncoder, ShotTypes, Rally, Shot
+from pbcgui.data import database_factory, Game, DateTimeEncoder, Player, ShotTypes, Rally, Shot
 from pbcgui.palettes import AppPalette
 from pbcgui.widgets import *
 
@@ -27,7 +27,7 @@ class TouchscreenApp(QMainWindow):
         self.current_score = (0, 0, 2)
         self.existing_players = self.db.get_players()
         self.existing_games = self.db.get_games()
-        self.current_rally = None
+        self.current_rally = Rally(rally_score=self.current_score)
         self.current_shot_data = []
 
         # create widgets
@@ -50,6 +50,7 @@ class TouchscreenApp(QMainWindow):
         """
         ## CONNECT SLOTS
         self.new_game_slots()
+        self.shot_slots()
         self.shot_over_slots()
         self.rally_over_slots()
         self.game_over_slots()       
@@ -81,7 +82,7 @@ class TouchscreenApp(QMainWindow):
         self.game = Game()
         self.game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
         self.game.game_location = self.setup_game_widget.game_location_edit.text()
-        self.game.players = [item.currentText() for item in self.setup_game_widget.player_combos]
+        self.game.players = [Player(item.currentText()) for item in self.setup_game_widget.player_combos]
         self.setup_game_widget.log_widget.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))
         self.db.add_games(self.game)
 
@@ -120,44 +121,39 @@ class TouchscreenApp(QMainWindow):
         """Connect signals for when a new game is requested"""
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['player'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['stack'].update_buttons)
-        self.setup_game_widget.newGameRequested.connect(self.create_rally)
         self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
 
-    def add_player_to_shot(self, player):
+    def add_shot_player(self, value):
         """Add the player to the current shot"""
-        self.current_shot_data.append(player)
+        self.current_shot_data.append(value)
 
-    def add_shot_type_to_shot(self, shot_type):
-        """Add the shot_type to the current shot"""
-        self.current_shot_data.append(shot_type)
+    def add_shot_side(self, value):
+        """Add the player to the current shot"""
+        self.current_shot_data.append(value)
 
-    def add_shot_side_to_shot(self, shot_side):
-        """Add the shot_side to the current shot"""
-        self.current_shot_data.append(shot_side)
+    def add_shot_type(self, value):
+        """Add the player to the current shot"""
+        self.current_shot_data.append(value)
 
-    def add_shot_outcome_to_shot(self, shot_outcome):
+    def add_shot_outcome(self, value):
         """Add the shot_outcome to the current shot"""
-        self.current_shot_data.append(shot_outcome)
-        self.current_rally.add_shot(Shot(*self.current_shot_data))
+        params = dict(zip(['player', 'shot_type', 'shot_side'], self.current_shot_data))
+        params['shot_outcome'] = value
+        self.current_rally.shots.append(Shot(**params))
+        print(self.current_rally)
 
-    def create_rally(self):
-        """Create a new rally object and connect signals"""
-        self.current_rally = Rally(rally_score=(0, 0, 2))
-
-    def shot_start_slots(self):
+    def shot_slots(self):
         """Connect signals for when the shot starts"""
-        self.charting_widgets['player'].shot_started.connect(self.add_player_to_shot)
-        self.charting_widgets['shots'].shot_type_selected.connect(self.add_shot_type_to_shot)
-        self.charting_widgets['shots'].shot_side_selected.connect(self.add_shot_sie_to_shot)
-
+        self.charting_widgets['player'].shot_started.connect(self.add_shot_player)
+        self.charting_widgets['shots'].shot_type.connect(self.add_shot_type)
+        self.charting_widgets['side'].shot_side.connect(self.add_shot_side)
 
     def shot_over_slots(self):
         """Connect signals for when the shot is over"""
-        self.charting_widgets['outcome'].shot_over.connect(self.add_shot_outcome_to_shot)
-
+        self.charting_widgets['outcome'].shot_over.connect(lambda x: print(f"Shot Over Signal Connected - value is {x}"))
+        self.charting_widgets['outcome'].shot_over.connect(self.add_shot_outcome)
         for key in ['side', 'shots', 'player']:
             self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
-            self.charting_widgets['outcome'].shot_over.connect(lambda: print("Shot Over Signal Connected"))
 
     def rally_start_slots(self):
         """Connect signals for when the rally starts
@@ -169,15 +165,15 @@ class TouchscreenApp(QMainWindow):
     def rally_over_slots(self):
         """Connect signals for when the rally is over"""
         pass
-        #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_score)
-        #for key in ['side', 'shots', 'player', 'stack']:
-        #    self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
-        #    self.charting_widgets['winner'].rally_over.connect(lambda: print("Rally Over Signal Connected"))
+        self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_score)
+        for key in ['side', 'shots', 'player', 'stack']:
+            self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
+            self.charting_widgets['winner'].rally_over.connect(lambda: print("Rally Over Signal Connected"))
 
     def switch_to_charting(self):
         self.tab_widget.setCurrentIndex(1)
 
-    def update_score(self, new_score):
+    def update_score(self, new_score=(0, 0, 2)):
         """Update the score and emits the score_changed signal"""
         self.current_score = new_score
         self.score_changed.emit(self.current_score)

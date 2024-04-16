@@ -53,8 +53,9 @@ class PlayerSectionWidget(QWidget):
 
     def emit_shot_started(self, button):
         """Emits the rally started signal"""
+        print(f"Button text: {button.text()}")
         self.shot_started.emit(button.text())
-
+        
     def reset_buttons(self):
         self.button_group.setExclusive(False)  # Disable autoExclusive
         for button in self.button_group.buttons():

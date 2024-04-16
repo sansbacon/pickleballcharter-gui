@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 
-
 class ChartingMainWidget(QWidget):
 
     def __init__(self, shots_widget, other_widgets):

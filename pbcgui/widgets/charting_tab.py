@@ -1,5 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
 
+from .log import LogWidget
+
 
 class ChartTabWidget(QWidget):
 
@@ -8,6 +10,7 @@ class ChartTabWidget(QWidget):
 
         self.sidebar_widget = sidebar_widget
         self.main_widget = main_widget
+        self.log_widget = LogWidget()
 
         vlayout = QVBoxLayout()
 
@@ -15,8 +18,10 @@ class ChartTabWidget(QWidget):
         hlayout = QHBoxLayout()
         hlayout.addWidget(self.sidebar_widget)
         hlayout.addWidget(self.main_widget)
+        hlayout.addWidget(self.log_widget)
 
-        hlayout.setStretch(0, 20)
-        hlayout.setStretch(1, 80)
+        hlayout.setStretch(0, 15)
+        hlayout.setStretch(1, 60)
+        hlayout.setStretch(2, 25)
         vlayout.addLayout(hlayout)
         self.setLayout(vlayout)

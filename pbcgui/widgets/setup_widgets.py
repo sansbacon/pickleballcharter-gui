@@ -7,21 +7,7 @@ from PySide6.QtWidgets import (
     QComboBox, QMessageBox, QCompleter
 )
 
-
-class LogWidget(QWidget):
-    """A simple widget that logs text read only"""
-    def __init__(self, parent=None, title="Log"):
-        super(LogWidget, self).__init__(parent)
-        self.log_section = QGroupBox(title)
-        self.log_section_layout = QVBoxLayout()
-        self.log_console = QTextEdit()
-        self.log_console.setReadOnly(True)
-        self.log_section_layout.addWidget(self.log_console)
-        self.log_section.setLayout(self.log_section_layout)
-
-    def append(self, text):
-        self.log_console.append(text)
-
+from .log import LogWidget
 
 class SetupGameWidget(QWidget):
 
@@ -108,7 +94,7 @@ class SetupGameWidget(QWidget):
         button_layout.addWidget(self.new_game_button)
 
         # LOG SECTION
-        left_column.addWidget(self.log_widget.log_section)
+        left_column.addWidget(self.log_widget)
 
         # RIGHT COLUMN
         right_column = QVBoxLayout()

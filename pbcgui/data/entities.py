@@ -60,11 +60,22 @@ class ShotTypes(ExtendedEnum):
 @dataclass
 class Player:
     """Data class for a player"""
-    player_name: str
+    first_name: str
+    last_name: str
+    nickname: str = None
+    gender: str = None
     player_guid: str = str(uuid4())
 
     def to_dict(self):
-        return asdict(self)
+        d = asdict(self)
+        d['full_name'] = self.full_name
+
+    @property
+    def full_name(self):
+        name = f'{self.first_name} {self.last_name}'
+        if self.nickname:
+            name += f' ({self.nickname})'
+        return name
 
 
 @dataclass

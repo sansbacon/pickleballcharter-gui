@@ -2,28 +2,38 @@ from PySide6.QtCore import QDate, Signal
 
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout,
-    QPushButton, QSizePolicy, QGroupBox, QTextEdit,
+    QPushButton, QSizePolicy, QGroupBox,
     QLabel, QDateEdit, QLineEdit, QSpacerItem,
-    QComboBox, QMessageBox, QCompleter
+    QComboBox, QMessageBox
 )
 
 from .log import LogWidget
+from .player_dialog import PlayerDialog
+
 
 class SetupGameWidget(QWidget):
+    """A widget for setting up a new game."""
 
     newGameRequested = Signal(list)
 
-    def __init__(self, players, parent=None):
-        super(SetupGameWidget, self).__init__(parent)
+    def __init__(self, players):
+        """
+        Initialize the SetupGameWidget with the given players.
+
+        Args:
+            players (list): A list of players.
+            parent (QWidget, optional): The parent widget.
+        """
+        super().__init__()
         
         # instance variables
         self.log_widget = LogWidget()
         self.game_date_picker = QDateEdit()
         self.game_location_edit = QLineEdit()
         self.game_location_edit.editingFinished.connect(self.log_text_change)
-        self.players = [''] + players
-        self.player_combos = [self.create_player_combo() for _ in range(4)]
-
+        self.existing_players = sorted(players)
+        self.player_listwidgets = [self.create_player_listwidget() for _ in range(4)]
+    
         # main layout
         main_layout = QHBoxLayout()
         self.setLayout(main_layout)
@@ -71,12 +81,16 @@ class SetupGameWidget(QWidget):
         players_section_layout.addWidget(QLabel('<br>'.join(msg)))
 
         # Add a spacer for padding
-        players_section_layout.addItem(QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding))
+        players_section_layout.addItem(QSpacerItem(5, 5, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        # Add a button for adding a new player
+        addPlayerButton = QPushButton("Add New Player")
+        addPlayerButton.clicked.connect(self.launch_new_player_dialog)
+        players_section_layout.addWidget(addPlayerButton)        
 
         # now add player combos
-        for idx, widget in enumerate(self.player_combos):
+        for idx, widget in enumerate(self.player_listwidgets):
             player_label = QLabel(f"Player {idx + 1}")
-            widget.currentTextChanged.connect(self.log_cb_change)
             players_section_layout.addWidget(player_label)
             players_section_layout.addWidget(widget)
 
@@ -100,29 +114,57 @@ class SetupGameWidget(QWidget):
         right_column = QVBoxLayout()
         main_layout.addLayout(right_column, 67)  
 
-    def create_player_combo(self):
-        combo = QComboBox()
-        combo.setEditable(True)
-        combo.addItems([str(p) for p in self.players])
-        completer = QCompleter()
-        completer.setModel(combo.model())
-        combo.setCompleter(completer)
-        return combo
+    def launch_new_player_dialog(self):
+        self.add_player_dialog = PlayerDialog()
+        self.add_player_dialog.player_added.connect(self.process_new_player)
+        self.add_player_dialog.show()
+        self.add_player_dialog.setFocus()
+
+    def process_new_player(self, new_player):
+        self.existing_players.append(new_player.full_name)
+        for lw in self.player_listwidgets:
+            lw.insertItem(0, new_player.full_name)
+
+    def create_player_listwidget(self):
+        """
+        Create a QListWidget for each player.
+
+        Returns:
+            QListWidget: A QListWidget with the player names.
+
+        """
+        lw = QComboBox()
+        lw.setEditable(False)
+        lw.addItems([str(p) for p in self.existing_players])
+        return lw
 
     def log_cb_change(self, s):
+        """Log the change in a combo box.
+
+        Args:
+            s (str): The new text of the combo box.
+
+        """
         self.log_widget.append(s)
 
     def log_text_change(self):
+        """Log the change in a line edit."""
         line_edit = self.sender()
         new_text = line_edit.text()
         self.log_widget.append(new_text)
 
     def log_date_change(self, new_date):
+        """Log the change in the date picker.
+
+        Args:
+            new_date (QDate): The new date.
+
+        """
         self.log_widget.append(new_date.toString())
 
     def validate_and_emit_new_game(self):
-        """Validates against duplicates and empty strings, then emits a signal with the player names."""
-        values = [cb.currentText() for cb in self.player_combos]
+        """Validate the player names and emit the newGameRequested signal."""
+        values = [cb.currentText() for cb in self.player_listwidgets]
 
         if "" in values:
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Empty.")

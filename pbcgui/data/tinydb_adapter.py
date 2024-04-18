@@ -65,10 +65,15 @@ class TinyDBAdapter(DatabaseAdapter):
         return table.insert_multiple(players if isinstance(players, list) else [players])
 
     @with_db
-    def get_players(self, db) -> List[Player]:
+    def get_players(self, db, names=None, guids=None) -> List[Player]:
+        """Get players from the database by name or guid. If no names or guids are provided, return all players."""
         table = db.table(self.players_table)
+        if all((names, guids is None)):
+            return table.search(Query().name.one_of(names))
+        if all((names is None, guids)):
+            return table.search(Query().name.one_of(guids))
         return table.all()
-    
+
     @with_db
     def add_rallies(self, db, rallies: List[Rally]) -> List[int]:
         table = db.table(self.rallies_table)

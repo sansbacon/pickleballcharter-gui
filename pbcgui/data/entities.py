@@ -81,10 +81,10 @@ class Player:
 @dataclass
 class Shot:
     """Data class for a shot"""
-    player: str
-    shot_type: str
-    shot_side: str
-    shot_outcome: str
+    player: str = None
+    shot_type: str = None
+    shot_side: str = None
+    shot_outcome: str = None
 
     def to_dict(self):
         return asdict(self)

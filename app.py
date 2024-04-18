@@ -1,7 +1,5 @@
 import json
-from pathlib import Path
 import sys
-from uuid import uuid4
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication
@@ -18,75 +16,12 @@ class TouchscreenApp(QMainWindow):
     score_changed = Signal(tuple)
 
     def __init__(self):
-        super().__init__()
-        
-        # database setup
-        self.db = database_factory(db_type='tinydb', db_path=user_data_dir / user_data_file)
-        
-        # entity setup
-        self.current_score = (0, 0, 2)
-        self.existing_players = self.db.get_players()
-        self.existing_games = self.db.get_games()
-        self.current_rally = Rally(rally_score=self.current_score)
-        self.current_shot_data = []
+        super().__init__()        
+        self._initProperties()
+        self._initUI()
+        self._initSlots()
 
-        # create widgets
-        self.create_widgets()
-
-        # Create the UI
-        self.initUI()
-
-        # log data
-        for game in self.db.get_games():
-            self.setup_game_widget.log_widget.append(json.dumps(game, cls=DateTimeEncoder, indent=4))
-
-        # Connect signals
-        """
-        When rally over button group is clicked, the following needs to happen:
-            All data is encapsulated in Rally object that is added to application Game object
-            Score label gets incremented
-            Shot + other buttons reset
-            Select correct player and serve button for next play or display game over popup
-        """
-        ## CONNECT SLOTS
-        self.new_game_slots()
-        self.shot_slots()
-        self.shot_over_slots()
-        self.rally_over_slots()
-        self.game_over_slots()       
-
-    def initUI(self):
-        # Set the palette
-        self.setPalette(AppPalette())
-        
-        # Create a menu bar
-        menu_bar = AppMenuBar(self)
-        self.setMenuBar(menu_bar)
-
-        # Create a tab widget
-        self.tab_widget = QTabWidget()
-
-        # Initialize the first tab
-        self.setup_game_widget = SetupGameWidget(players=self.existing_players)
-        self.setup_game_widget.new_game_button.clicked.connect(self.create_new_game)
-        self.tab_widget.addTab(self.setup_game_widget, "Setup Game")
-        
-        # Initialize the second tab
-        self.tab_widget.addTab(self.charting_widgets['tab'], "Chart Game")
-
-        # Set the tab widget as the central widget
-        self.setCentralWidget(self.tab_widget)
-
-    def create_new_game(self):
-        # Read the tabs and fill out the game object
-        self.game = Game()
-        self.game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
-        self.game.game_location = self.setup_game_widget.game_location_edit.text()
-        self.game.players = [Player(item.currentText()) for item in self.setup_game_widget.player_combos]
-        self.setup_game_widget.log_widget.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))
-        self.db.add_games(self.game)
-
-    def create_widgets(self):
+    def _create_widgets(self):
         """Create the widgets for the application"""
         self.charting_widgets = {
             "player": PlayerSectionWidget(),
@@ -109,7 +44,47 @@ class TouchscreenApp(QMainWindow):
 
         self.charting_widgets['tab'] = ChartTabWidget(self.charting_widgets['sidebar'], self.charting_widgets['main'])
 
-    def game_over_slots(self):
+    def _initProperties(self):
+        """Initialize the properties of the application"""
+        self.current_game = Game()
+        self.current_players = []
+        self.current_score = (0, 0, 2)
+        self.current_rally = Rally(rally_score=self.current_score)
+        self.current_shot = Shot()
+        self.db = database_factory(db_type='tinydb', db_path=user_data_dir / user_data_file)
+        self.existing_players = self.db.get_players()
+        self.games = []
+
+    def _initSlots(self):
+        """Initialize the slots for the application"""
+        self._game_over_slots()       
+        self._new_game_slots()
+        self._rally_over_slots()
+        self._shot_over_slots()
+        self._shot_slots()
+        
+    def _initUI(self):
+        """Initialize the user interface"""
+        self._create_widgets()
+        self.setPalette(AppPalette())
+        menu_bar = AppMenuBar(self)
+        self.setMenuBar(menu_bar)
+
+        # Create a tab widget
+        self.tab_widget = QTabWidget()
+
+        # Initialize the first tab
+        self.setup_game_widget = SetupGameWidget(players=self.existing_players)
+        self.setup_game_widget.new_game_button.clicked.connect(self.create_new_game)
+        self.tab_widget.addTab(self.setup_game_widget, "Setup Game")
+        
+        # Initialize the second tab
+        self.tab_widget.addTab(self.charting_widgets['tab'], "Chart Game")
+
+        # Set the tab widget as the central widget
+        self.setCentralWidget(self.tab_widget)
+
+    def _game_over_slots(self):
         """Connect signals for when the game is over"""
         pass
         #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_score)
@@ -117,58 +92,61 @@ class TouchscreenApp(QMainWindow):
         #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['shots'].reset_buttons)
         #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['shots'].print_buttons)
 
-    def new_game_slots(self):
+    def _new_game_slots(self):
         """Connect signals for when a new game is requested"""
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['player'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['stack'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
 
-    def add_shot_player(self, value):
-        """Add the player to the current shot"""
-        self.current_shot_data.append(value)
+    def _rally_over_slots(self):
+        """Connect signals for when the rally is over"""
+        pass
+        #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_score)
+        #for key in ['side', 'shots', 'player', 'stack']:
+        #    self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
+        #    self.charting_widgets['winner'].rally_over.connect(lambda: print("Rally Over Signal Connected"))
 
-    def add_shot_side(self, value):
-        """Add the player to the current shot"""
-        self.current_shot_data.append(value)
-
-    def add_shot_type(self, value):
-        """Add the player to the current shot"""
-        self.current_shot_data.append(value)
-
-    def add_shot_outcome(self, value):
-        """Add the shot_outcome to the current shot"""
-        params = dict(zip(['player', 'shot_type', 'shot_side'], self.current_shot_data))
-        params['shot_outcome'] = value
-        self.current_rally.shots.append(Shot(**params))
-        print(self.current_rally)
-
-    def shot_slots(self):
-        """Connect signals for when the shot starts"""
-        self.charting_widgets['player'].shot_started.connect(self.add_shot_player)
-        self.charting_widgets['shots'].shot_type.connect(self.add_shot_type)
-        self.charting_widgets['side'].shot_side.connect(self.add_shot_side)
-
-    def shot_over_slots(self):
-        """Connect signals for when the shot is over"""
-        self.charting_widgets['outcome'].shot_over.connect(lambda x: print(f"Shot Over Signal Connected - value is {x}"))
-        self.charting_widgets['outcome'].shot_over.connect(self.add_shot_outcome)
-        for key in ['side', 'shots', 'player']:
-            self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
-
-    def rally_start_slots(self):
+    def _rally_start_slots(self):
         """Connect signals for when the rally starts
            The initial rally setup is done in the __init__method
            This is used for rallies after the first rally
         """
         pass
 
-    def rally_over_slots(self):
-        """Connect signals for when the rally is over"""
-        pass
-        self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_score)
-        for key in ['side', 'shots', 'player', 'stack']:
-            self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
-            self.charting_widgets['winner'].rally_over.connect(lambda: print("Rally Over Signal Connected"))
+    def _shot_slots(self):
+        """Connect signals for when the shot starts"""
+        self.charting_widgets['player'].shot_started.connect(self.add_shot_player)
+        self.charting_widgets['shots'].shot_type.connect(self.add_shot_type)
+        self.charting_widgets['side'].shot_side.connect(self.add_shot_side)
+
+    def _shot_over_slots(self):
+        """Connect signals for when the shot is over"""
+        self.charting_widgets['outcome'].shot_over.connect(self.add_shot_outcome)
+        for key in ['side', 'shots', 'player']:
+            self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
+
+    def add_shot_outcome(self, value):
+        """Add the shot_outcome to the current shot"""
+        self.current_shot.outcome = value
+        self.current_rally.shots.append(self.current_shot)
+        self.current_shot = Shot()
+
+    def add_shot_player(self, value):
+        self.current_shot.player = value
+
+    def add_shot_side(self, value):
+        self.current_shot.side = value
+
+    def add_shot_type(self, value):
+        self.current_shot.shot_type = value
+
+    def create_new_game(self):
+        # Read the tabs and fill out the game object
+        self.game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
+        self.game.game_location = self.setup_game_widget.game_location_edit.text()
+        player_guids = [item.currentValue() for item in self.setup_game_widget.player_combos]
+        self.game.players = self.db.get_players(guids=player_guids)
+        self.setup_game_widget.log_widget.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))        
 
     def switch_to_charting(self):
         self.tab_widget.setCurrentIndex(1)

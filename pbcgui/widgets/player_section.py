@@ -9,7 +9,7 @@ from ..utility import unique_names
 class PlayerSectionWidget(QWidget):
     """A widget for the player section of the sidebar"""
     
-    shot_started = Signal(str)
+    shot_started = Signal(int)
 
     def __init__(self):
         super().__init__()
@@ -53,9 +53,9 @@ class PlayerSectionWidget(QWidget):
 
     def emit_shot_started(self, button):
         """Emits the rally started signal"""
-        print(f"Button text: {button.text()}")
-        self.shot_started.emit(button.text())
-        
+        button_index = self.buttons.index(button)
+        self.shot_started.emit(button_index)
+
     def reset_buttons(self):
         self.button_group.setExclusive(False)  # Disable autoExclusive
         for button in self.button_group.buttons():

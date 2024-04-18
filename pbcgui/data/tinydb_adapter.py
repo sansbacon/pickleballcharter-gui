@@ -48,7 +48,11 @@ class TinyDBAdapter(DatabaseAdapter):
     @with_db
     def add_games(self, db, games: List[Game]) -> List[int]:
         table = db.table(self.games_table)
-        return table.insert_multiple(games if isinstance(games, list) else [games])
+        if isinstance(games, list):
+            games = [game.to_dict() for game in games]
+        else:
+            games = [games.to_dict()]
+        return table.insert_multiple(games)
 
     @with_db
     def get_games(self, db) -> List[Game]:
@@ -56,15 +60,32 @@ class TinyDBAdapter(DatabaseAdapter):
         return table.all()
 
     @with_db
-    def add_players(self, db, players: List[Player]) -> List[int]:
+    def add_players(self, db, players) -> List[int]:
         table = db.table(self.players_table)
-        return table.insert_multiple(players if isinstance(players, list) else [players])
+        if not players:
+            print('TinyDBAdapter: No players to add to database')
+            return None
+        if isinstance(players, Player):
+            #raise ValueError(f'TinyDBAdapter: Invalid players format: {type(players)} {players}')
+            p = players.to_dict()
+            assert isinstance(p, dict), f'TinyDBAdapter: Invalid players format: {type(players)} {type(p)}'
+            return table.insert(p)
+        elif all((isinstance(players, list), isinstance(players[0], list))):
+            return table.insert_multiple([player.to_dict() for player in players])
+        raise ValueError(f'TinyDBAdapter: Invalid players format: {type(players)} {players}')
 
     @with_db
-    def get_players(self, db) -> List[Player]:
+    def get_players(self, db, names=None, guids=None) -> List[Player]:
+        """Get players from the database by name or guid. If no names or guids are provided, return all players."""
         table = db.table(self.players_table)
-        return table.all()
-    
+        if all((names, guids is None)):
+            players = table.search(Query().name.one_of(names))
+        elif all((names is None, guids)):
+            players = table.search(Query().name.one_of(guids))
+        else:
+            players = table.all()
+        return [Player(**player) for player in players]
+
     @with_db
     def add_rallies(self, db, rallies: List[Rally]) -> List[int]:
         table = db.table(self.rallies_table)

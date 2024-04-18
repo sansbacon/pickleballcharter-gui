@@ -1,10 +1,13 @@
 from PySide6.QtWidgets import QWidget, QSizePolicy, QGridLayout, QGroupBox, QPushButton, QButtonGroup
 from PySide6.QtGui import QKeySequence
+from PySide6.QtCore import Signal
 
 from ..data.entities import ShotTypes
 
 
 class ChartingShotsWidget(QWidget):
+
+    shot_type = Signal(str)
 
     def __init__(self, shot_types: ShotTypes):
         super().__init__()
@@ -21,8 +24,8 @@ class ChartingShotsWidget(QWidget):
         self.buttons = []
 
         # Add shots buttons
-        self.shots_button_group = QButtonGroup()
-        self.shots_button_group.setExclusive(True)
+        self.button_group = QButtonGroup()
+        self.button_group.setExclusive(True)
         for idx, shot_type in enumerate(shot_types):
             j = idx % 5
             i = idx // 5
@@ -36,12 +39,21 @@ class ChartingShotsWidget(QWidget):
             else:
                 button.setShortcut(QKeySequence(f"Ctrl+Alt+{idx-9}"))
             section_layout.addWidget(button, j, i)
-            self.shots_button_group.addButton(button)
+            self.button_group.addButton(button)
             self.buttons.append(button)
 
         layout.addWidget(section)
         self.setLayout(layout)
+        self.button_group.buttonClicked.connect(self.emit_shot_type)
 
+    def emit_shot_type(self, button):
+        """Emit the shot type selected signal
+        
+        Args:
+            button (QPushButton): The button that was clicked
+
+        """
+        self.shot_type.emit(button.text())
 
     def get_selected_shot(self) -> int:
         """Get the selected shot
@@ -52,4 +64,10 @@ class ChartingShotsWidget(QWidget):
         """
         for idx, button in enumerate(self.buttons):
             if button.isChecked():
-                return self.shot_types.find(idx)
+                return self.shot_types.find(idx)    
+
+    def reset_buttons(self):
+        self.button_group.setExclusive(False)  # Disable autoExclusive
+        for button in self.button_group.buttons():
+            button.setChecked(False)
+        self.button_group.setExclusive(True)  # Enable autoExclusive

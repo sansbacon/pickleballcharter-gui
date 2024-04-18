@@ -32,8 +32,8 @@ class StackSectionWidget(QWidget):
         layout.addWidget(section)
         
         # create the button group
-        button_group = QButtonGroup()
-        button_group.setExclusive(True)
+        self.button_group = QButtonGroup()
+        self.button_group.setExclusive(True)
         self.buttons = []
 
         
@@ -47,9 +47,15 @@ class StackSectionWidget(QWidget):
                     button.setShortcut(shortcut)
                 section_layout.addWidget(button, idx, jdx)
                 self.buttons.append(button)
-                button_group.addButton(button)
+                self.button_group.addButton(button)
 
         self.setLayout(layout)  
+
+    def reset_buttons(self):
+        self.button_group.setExclusive(False)  # Disable autoExclusive
+        for button in self.button_group.buttons():
+            button.setChecked(False)
+        self.button_group.setExclusive(True)  # Enable autoExclusive
 
     def update_buttons(self, players):
         """Updates the text of the stack buttons"""

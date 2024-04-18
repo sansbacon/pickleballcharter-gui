@@ -8,6 +8,8 @@ from ..utility import next_score
 
 class ShotSideWidget(QWidget):
 
+    shot_side = Signal(str)
+
     def __init__(self):
         super().__init__()
         self.buttons = []
@@ -33,9 +35,20 @@ class ShotSideWidget(QWidget):
             self.buttons.append(button)
             
         self.setLayout(layout)
+        self.button_group.buttonClicked.connect(self.emit_shot_side)
 
+    def emit_shot_side(self, button):
+        self.shot_side.emit(button.text())
+
+    def reset_buttons(self):
+        self.button_group.setExclusive(False)  # Disable autoExclusive
+        for button in self.button_group.buttons():
+            button.setChecked(False)
+        self.button_group.setExclusive(True)  # Enable autoExclusive
 
 class ShotOutcomeWidget(QWidget):
+
+    shot_over = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -62,11 +75,25 @@ class ShotOutcomeWidget(QWidget):
             self.buttons.append(button)
             
         self.setLayout(layout)
+        
+        self.button_group.buttonClicked.connect(self.emit_shot_over)
+        
+    def emit_shot_over(self, button):
+        self.shot_over.emit(button.text())
+        self.reset_buttons()
+
+    def reset_buttons(self):
+        self.button_group.setExclusive(False)  # Disable autoExclusive
+        for button in self.button_group.buttons():
+            button.setChecked(False)
+        self.button_group.setExclusive(True)  # Enable autoExclusive
 
 
 class RallyWinnerWidget(QWidget):
 
-    rally_over = Signal(tuple)
+    # rally over emits 'server' or 'returner' to indicate who won the rally
+    # next_server emits an integer to indicate who should serve next
+    rally_over = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -92,10 +119,17 @@ class RallyWinnerWidget(QWidget):
             self.button_group.addButton(button)
             self.buttons.append(button)
         
-        self.button_group.buttonClicked.connect(self.emit_rally_over)
+        self.button_group.buttonClicked.connect(self.emit_rally_winner)
+        
         self.setLayout(layout)
 
-    def emit_rally_over(self, button):
+    def emit_rally_winner(self, button):       
         winner = 'server' if button.text() == 'Serving Team' else 'returner'
         self.rally_over.emit(winner)
-        button.setChecked(False) 
+        self.reset_buttons()
+
+    def reset_buttons(self):
+        self.button_group.setExclusive(False)  # Disable autoExclusive
+        for button in self.button_group.buttons():
+            button.setChecked(False)
+        self.button_group.setExclusive(True)  # Enable autoExclusive

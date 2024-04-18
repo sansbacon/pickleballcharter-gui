@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields, _MISSING_TYPE, asdict
+from dataclasses import dataclass, field, asdict
 import datetime
 from enum import Enum
 import json
@@ -60,8 +60,37 @@ class ShotTypes(ExtendedEnum):
 @dataclass
 class Player:
     """Data class for a player"""
-    player_name: str
+    first_name: str
+    last_name: str
+    nickname: str = None
+    gender: str = None
+    full_name: str = None
     player_guid: str = str(uuid4())
+
+    def __post_init__(self):
+        if not self.full_name:
+            name = f'{self.first_name} {self.last_name}'
+            if self.nickname:
+                name += f' ({self.nickname})'
+            self.full_name = name
+
+    def to_dict(self):
+        return asdict(self)
+        
+@dataclass
+class Team:
+    """Data class for a team"""
+    players: List[Player] = field(default_factory=list)
+    score: int = None
+    opp_score: int = None
+    win: int = None
+
+    def __post_init__(self):
+        if not self.win:
+            try:
+                self.win = int(self.score > self.opp_score)
+            except TypeError:
+                pass
 
     def to_dict(self):
         return asdict(self)
@@ -70,8 +99,10 @@ class Player:
 @dataclass
 class Shot:
     """Data class for a shot"""
-    player_guid: str
-    shot_type: str
+    player_guid: str = None
+    shot_type: str = None
+    shot_side: str = None
+    shot_outcome: str = None
 
     def to_dict(self):
         return asdict(self)
@@ -82,16 +113,16 @@ class Rally:
     """Data class for a rally
     Score is when the rally starts"""
     rally_score: tuple
-    shots: List[Shot]
-    rally_winner: str
-    stack: List[str]
+    rally_winner: str = None
+    shots: List[Shot] = field(default_factory=list)
+    stack: List[str] = field(default_factory=list)
 
-    def __post_init__(self):
-        # Loop through the fields
-        for field in fields(self):
-            # If there is a default and the value of the field is none we can assign a value
-            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
-                setattr(self, field.name, field.default)
+    def player_shots(self):
+        d = {}
+        for shot in self.shots:
+            if shot.player_guid not in d:
+                d[shot.player_guid] = []
+            d[shot.player_guid].append(shot)
 
     def to_dict(self):
         return {
@@ -108,23 +139,51 @@ class Game:
     game_guid: str = str(uuid4())
     game_date: datetime = None
     game_location: str = None
-    players: List[Player] = None
-    rallies: List[Rally] = None
+    teams: List[Team] = field(default_factory=list)
+    rallies: List[Rally] = field(default_factory=list)
     final_score: tuple = None # always team 1 then team 2
 
-    def __post_init__(self):
-        # Loop through the fields
-        for field in fields(self):
-            # If there is a default and the value of the field is none we can assign a value
-            if not isinstance(field.default, _MISSING_TYPE) and getattr(self, field.name) is None:
-                setattr(self, field.name, field.default)
+    def players(self):
+        return [player for team in self.teams for player in team.players]
 
+    def player_shots(self):
+        shots = self.shots()
+        return {
+            player.player_guid: [shot for shot in shots if shot.player_guid == player.player_guid]
+            for player in self.players()
+        }
+    
+    def rally_count(self):
+        return len(self.rallies)
+
+    def score_states(self):
+        return [rally.rally_score for rally in self.rallies]
+
+    def shot_count(self):
+        return sum([len(rally.shots) for rally in self.rallies])
+
+    def shots(self):
+        l = []
+        for rally in self.rallies:
+            l.extend(rally.shots)
+        return l
+    
     def to_dict(self):
         return {
             "game_guid": self.game_guid,
             "game_date": self.game_date,
             "game_location": self.game_location,
-            "players": [player.to_dict() for player in self.players],
+            "teams": [team.to_dict() for team in self.teams],
             "rallies": [rally.to_dict() for rally in self.rallies],
             "final_score": self.final_score
         }
+
+    def winner(self):
+        if any((not self.final_score, not self.final_score[0], not self.final_score[1])):
+            return None
+        return int(self.final_score[0] < self.final_score[1])
+            
+    def winning_team(self):
+        if not self.winner():
+            return None
+        return self.teams[self.winner()]

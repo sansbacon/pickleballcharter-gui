@@ -1,13 +1,16 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QButtonGroup, QGroupBox, QHBoxLayout, QPushButton, QVBoxLayout, QWidget, QSizePolicy
 
+from ..data import Rally
 from ..utility import unique_names
 
 
 class PlayerSectionWidget(QWidget):
     """A widget for the player section of the sidebar"""
     
+    shot_started = Signal(int)
+
     def __init__(self):
         super().__init__()
 
@@ -22,8 +25,8 @@ class PlayerSectionWidget(QWidget):
         section.setLayout(section_layout)
         layout.addWidget(section)
 
-        self.player_button_group = QButtonGroup()
-        self.player_button_group.setExclusive(True)
+        self.button_group = QButtonGroup()
+        self.button_group.setExclusive(True)
         self.buttons = []
 
         player_shortcuts = {
@@ -42,11 +45,22 @@ class PlayerSectionWidget(QWidget):
                 player_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
                 player_button.setShortcut(player_shortcuts[(team, i)])
                 row_layout.addWidget(player_button)
-                self.player_button_group.addButton(player_button)
+                self.button_group.addButton(player_button)
                 self.buttons.append(player_button)
 
+        self.button_group.buttonClicked.connect(self.emit_shot_started)
         self.setLayout(layout)
 
+    def emit_shot_started(self, button):
+        """Emits the rally started signal"""
+        button_index = self.buttons.index(button)
+        self.shot_started.emit(button_index)
+
+    def reset_buttons(self):
+        self.button_group.setExclusive(False)  # Disable autoExclusive
+        for button in self.button_group.buttons():
+            button.setChecked(False)
+        self.button_group.setExclusive(True)  # Enable autoExclusive
 
     def update_buttons(self, players):
         """Updates the text of the stack buttons"""

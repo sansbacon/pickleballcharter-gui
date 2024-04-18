@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QGroupBox, QLabel, QSizePolicy
-from PySide6.QtGui import QFont
 
-from ..utility import next_score, score_to_string, string_to_score
+from ..utility import score_to_string
 
 
 class ScoreSectionWidget(QWidget):
@@ -29,10 +28,7 @@ class ScoreSectionWidget(QWidget):
         font.setPointSize(new_font_size)  # Set the new font size
         self.score_label.setFont(font)  # Apply the new font
 
-    def update_score(self, winner):
+    def update_label(self, score):
         # Update the score based on the winner
-        # This is just a placeholder, replace it with your actual logic
-        current_score = string_to_score(self.score_label.text())
-        new_score = next_score(current_score, winner)
-        self.score_label.setText(score_to_string(new_score))
+        self.score_label.setText(score_to_string(score))
 

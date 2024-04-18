@@ -30,8 +30,8 @@ class SetupGameWidget(QWidget):
         self.log_widget = LogWidget()
         self.game_date_picker = QDateEdit()
         self.game_location_edit = QLineEdit()
-        self.existing_players = self.existing_players = sorted(players, key=lambda player: player.full_name)
-        self.player_listwidgets = [self.create_player_listwidget() for _ in range(4)]
+        self.existing_players = self.existing_players = sorted(players, key=lambda player: player.first_name)
+        self.player_combos = [self.create_player_combo() for _ in range(4)]
     
         # main layout
         main_layout = QHBoxLayout()
@@ -89,7 +89,7 @@ class SetupGameWidget(QWidget):
         players_section_layout.addItem(QSpacerItem(5, 5, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         # now add player combos
-        for idx, widget in enumerate(self.player_listwidgets):
+        for idx, widget in enumerate(self.player_combos):
             player_label = QLabel(f"Player {idx + 1}")
             players_section_layout.addWidget(player_label)
             players_section_layout.addWidget(widget)
@@ -115,18 +115,11 @@ class SetupGameWidget(QWidget):
         right_column = QVBoxLayout()
         main_layout.addLayout(right_column, 67)  
 
-    def launch_new_player_dialog(self):
+        # Player Dialog
         self.add_player_dialog = PlayerDialog()
         self.add_player_dialog.player_added.connect(self.process_new_player)
-        self.add_player_dialog.show()
-        self.add_player_dialog.setFocus()
 
-    def process_new_player(self, new_player):
-        self.existing_players.append(new_player)
-        for lw in self.player_listwidgets:
-            lw.insertItem(0, new_player.full_name, new_player.player_guid)
-
-    def create_player_listwidget(self):
+    def create_player_combo(self):
         """
         Create a QListWidget for each player.
 
@@ -140,9 +133,18 @@ class SetupGameWidget(QWidget):
             lw.addItem(p.full_name, p.player_guid)
         return lw
 
+    def launch_new_player_dialog(self):
+        self.add_player_dialog.show()
+        self.add_player_dialog.setFocus()
+
+    def process_new_player(self, new_player):
+        self.existing_players.append(new_player)
+        for lw in self.player_combos:
+            lw.insertItem(0, new_player.full_name, new_player.player_guid)
+
     def validate_and_emit_new_game(self):
         """Validate the player names and emit the newGameRequested signal."""
-        values = [cb.currentText() for cb in self.player_listwidgets]
+        values = [cb.currentText() for cb in self.player_combos]
 
         if "" in values:
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Empty.")

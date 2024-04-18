@@ -1,11 +1,9 @@
-import json
 import sys
 
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication
+from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 
 from config import user_data_dir, user_data_file
-from pbcgui.data import database_factory, Game, DateTimeEncoder, ShotTypes, Rally, Shot
+from pbcgui.data import database_factory, Game, Rally, Shot, ShotTypes
 from pbcgui.palettes import AppPalette
 from pbcgui.widgets import *
 
@@ -57,6 +55,7 @@ class TouchscreenApp(QMainWindow):
 
     def _initSlots(self):
         """Initialize the slots for the application"""
+        self.setup_game_widget.add_player_dialog.player_added.connect(self.add_player_to_db)
         self._game_over_slots()       
         self._new_game_slots()
         self._rally_over_slots()
@@ -113,6 +112,11 @@ class TouchscreenApp(QMainWindow):
         for key in ['side', 'shots', 'player']:
             self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
 
+    def add_player_to_db(self, player):
+        """Adds new players to the database"""
+        print(f'Add_player_to_db: {type(player)} {player}')
+        self.db.add_players(player)
+
     def add_shot_outcome(self, value):
         """Add the shot_outcome to the current shot"""
         self.current_shot.outcome = value
@@ -132,8 +136,13 @@ class TouchscreenApp(QMainWindow):
         # Read the tabs and fill out the game object
         self.current_game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
         self.current_game.game_location = self.setup_game_widget.game_location_edit.text()
-        player_guids = [item.currentValue() for item in self.setup_game_widget.player_combos]
+        player_guids = [item.currentData() for item in self.setup_game_widget.player_combos]
         self.current_game.players = self.db.get_players(guids=player_guids)
+
+    def find_new_players(self):
+        """Find the new players that have been added"""
+        existing = [player.player_guid for player in self.existing_players]
+        return [p for p in self.current_players if p.player_guid not in existing]            
 
     def switch_to_charting(self):
         self.tab_widget.setCurrentIndex(1)

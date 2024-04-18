@@ -5,7 +5,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication
 
 from config import user_data_dir, user_data_file
-from pbcgui.data import database_factory, Game, DateTimeEncoder, Player, ShotTypes, Rally, Shot
+from pbcgui.data import database_factory, Game, DateTimeEncoder, ShotTypes, Rally, Shot
 from pbcgui.palettes import AppPalette
 from pbcgui.widgets import *
 
@@ -13,7 +13,7 @@ from pbcgui.widgets import *
 class TouchscreenApp(QMainWindow):
     """Main class for charting app"""
 
-    score_changed = Signal(tuple)
+    #score_changed = Signal(tuple)
 
     def __init__(self):
         super().__init__()        
@@ -87,10 +87,6 @@ class TouchscreenApp(QMainWindow):
     def _game_over_slots(self):
         """Connect signals for when the game is over"""
         pass
-        #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_score)
-        #self.charting_widgets['winner'].rally_over.connect(lambda: print("Signal emitted"))
-        #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['shots'].reset_buttons)
-        #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['shots'].print_buttons)
 
     def _new_game_slots(self):
         """Connect signals for when a new game is requested"""
@@ -100,18 +96,10 @@ class TouchscreenApp(QMainWindow):
 
     def _rally_over_slots(self):
         """Connect signals for when the rally is over"""
-        pass
-        #self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_score)
-        #for key in ['side', 'shots', 'player', 'stack']:
-        #    self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
-        #    self.charting_widgets['winner'].rally_over.connect(lambda: print("Rally Over Signal Connected"))
-
-    def _rally_start_slots(self):
-        """Connect signals for when the rally starts
-           The initial rally setup is done in the __init__method
-           This is used for rallies after the first rally
-        """
-        pass
+        self.charting_widgets['winner'].rally_over.connect(self.update_score)
+        self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_label)
+        for key in ['side', 'shots', 'player', 'stack']:
+            self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
 
     def _shot_slots(self):
         """Connect signals for when the shot starts"""
@@ -142,19 +130,20 @@ class TouchscreenApp(QMainWindow):
 
     def create_new_game(self):
         # Read the tabs and fill out the game object
-        self.game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
-        self.game.game_location = self.setup_game_widget.game_location_edit.text()
+        self.current_game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
+        self.current_game.game_location = self.setup_game_widget.game_location_edit.text()
         player_guids = [item.currentValue() for item in self.setup_game_widget.player_combos]
-        self.game.players = self.db.get_players(guids=player_guids)
-        self.setup_game_widget.log_widget.append(json.dumps(self.game.to_dict(), cls=DateTimeEncoder, indent=4))        
+        self.current_game.players = self.db.get_players(guids=player_guids)
 
     def switch_to_charting(self):
         self.tab_widget.setCurrentIndex(1)
 
-    def update_score(self, new_score=(0, 0, 2)):
+    def update_score(self, winner):
         """Update the score and emits the score_changed signal"""
-        self.current_score = new_score
-        self.score_changed.emit(self.current_score)
+        self.current_rally.winner = winner
+        self.current_game.rallies.append(self.current_rally)
+        self.current_score = next_score(self.current_score, winner)
+        self.current_rally = Rally(rally_score=self.current_score)
 
 
 if __name__ == "__main__":

@@ -123,8 +123,9 @@ class TouchscreenApp(QMainWindow):
         self.current_rally.shots.append(self.current_shot)
         self.current_shot = Shot()
 
-    def add_shot_player(self, value):
-        self.current_shot.player = value
+    def add_shot_player(self, player_index):
+        """Add the player to the current shot"""
+        self.current_shot.player_guid = self.current_players[player_index].player_guid
 
     def add_shot_side(self, value):
         self.current_shot.side = value

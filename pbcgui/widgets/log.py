@@ -1,3 +1,5 @@
+import json
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout,QGroupBox, QTextEdit
 
 
@@ -18,3 +20,11 @@ class LogWidget(QWidget):
     def append(self, text):
         self.log_console.append(text)
 
+
+class RallyLogWidget(LogWidget):
+    """A simple widget that logs text read only"""
+
+    def add_rally(self, rally):
+        text = json.dumps(rally.to_dict(), indent=4)
+        self.log_console.append(text)
+        self.log_console.append("\n")

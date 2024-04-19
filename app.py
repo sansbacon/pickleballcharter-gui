@@ -1,3 +1,5 @@
+import json
+import logging
 import sys
 
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
@@ -11,10 +13,12 @@ from pbcgui.widgets import *
 class TouchscreenApp(QMainWindow):
     """Main class for charting app"""
 
-    #score_changed = Signal(tuple)
+    log_rally = Signal(Rally)
 
     def __init__(self):
-        super().__init__()        
+        super().__init__()   
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
         self._initProperties()
         self._initUI()
         self._initSlots()
@@ -28,7 +32,8 @@ class TouchscreenApp(QMainWindow):
             "side": ShotSideWidget(),
             "outcome": ShotOutcomeWidget(),
             "shots": ChartingShotsWidget(shot_types=ShotTypes),
-            "winner": RallyWinnerWidget()
+            "winner": RallyWinnerWidget(),
+            "log": RallyLogWidget()
         }
 
         self.charting_widgets['sidebar'] =  ChartingSidebarWidget(
@@ -40,7 +45,7 @@ class TouchscreenApp(QMainWindow):
                 [self.charting_widgets['side'], self.charting_widgets['outcome'], self.charting_widgets['winner']]
         )
 
-        self.charting_widgets['tab'] = ChartTabWidget(self.charting_widgets['sidebar'], self.charting_widgets['main'])
+        self.charting_widgets['tab'] = ChartTabWidget(self.charting_widgets['sidebar'], self.charting_widgets['main'], self.charting_widgets['log'])
 
     def _initProperties(self):
         """Initialize the properties of the application"""
@@ -89,6 +94,7 @@ class TouchscreenApp(QMainWindow):
 
     def _new_game_slots(self):
         """Connect signals for when a new game is requested"""
+        self.setup_game_widget.newGameRequested.connect(self.add_current_players)
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['player'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['stack'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
@@ -109,8 +115,15 @@ class TouchscreenApp(QMainWindow):
     def _shot_over_slots(self):
         """Connect signals for when the shot is over"""
         self.charting_widgets['outcome'].shot_over.connect(self.add_shot_outcome)
+        self.log_rally.connect(self.charting_widgets['log'].add_rally)
         for key in ['side', 'shots', 'player']:
             self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
+
+    def add_current_players(self, players):
+        """Add the current players to the game"""
+        self.current_players = players
+        l = [p.to_dict() for p in self.current_players]
+        self.setup_game_widget.log_widget.append(json.dumps(l, indent=4))
 
     def add_player_to_db(self, player):
         """Adds new players to the database"""
@@ -119,8 +132,9 @@ class TouchscreenApp(QMainWindow):
 
     def add_shot_outcome(self, value):
         """Add the shot_outcome to the current shot"""
-        self.current_shot.outcome = value
+        self.current_shot.shot_outcome = value
         self.current_rally.shots.append(self.current_shot)
+        self.log_rally.emit(self.current_rally)
         self.current_shot = Shot()
 
     def add_shot_player(self, player_index):
@@ -128,7 +142,7 @@ class TouchscreenApp(QMainWindow):
         self.current_shot.player_guid = self.current_players[player_index].player_guid
 
     def add_shot_side(self, value):
-        self.current_shot.side = value
+        self.current_shot.shot_side = value
 
     def add_shot_type(self, value):
         self.current_shot.shot_type = value
@@ -157,6 +171,7 @@ class TouchscreenApp(QMainWindow):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
     app = QApplication(sys.argv)
     window = TouchscreenApp()
     window.showMaximized()

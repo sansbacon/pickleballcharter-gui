@@ -35,7 +35,6 @@ class StackSectionWidget(QWidget):
         self.button_group = QButtonGroup()
         self.button_group.setExclusive(True)
         self.buttons = []
-
         
         for idx, stacks in enumerate(self.stacks_possible):
             for jdx, stack in enumerate(stacks):
@@ -59,7 +58,7 @@ class StackSectionWidget(QWidget):
 
     def update_buttons(self, players):
         """Updates the text of the stack buttons"""
-        players = unique_names([p.split()[0] for p in players])
+        players = unique_names([p.first_name for p in players])
         self.buttons[0].setText(f'{players[1]} Left')
         self.buttons[1].setText(f'{players[1]} Right')
         self.buttons[2].setText(f'{players[3]} Right')

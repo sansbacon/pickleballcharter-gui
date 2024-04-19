@@ -5,12 +5,12 @@ from .log import LogWidget
 
 class ChartTabWidget(QWidget):
 
-    def __init__(self, sidebar_widget, main_widget):
+    def __init__(self, sidebar_widget, main_widget, log_widget):
         super().__init__()
 
         self.sidebar_widget = sidebar_widget
         self.main_widget = main_widget
-        self.log_widget = LogWidget()
+        self.log_widget = log_widget
 
         vlayout = QVBoxLayout()
 

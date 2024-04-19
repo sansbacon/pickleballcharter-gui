@@ -1,3 +1,6 @@
+import json
+import logging
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QButtonGroup, QGroupBox, QHBoxLayout, QPushButton, QVBoxLayout, QWidget, QSizePolicy
@@ -13,6 +16,8 @@ class PlayerSectionWidget(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
 
         # Create a layout for the section
         layout = QVBoxLayout()   
@@ -54,6 +59,7 @@ class PlayerSectionWidget(QWidget):
     def emit_shot_started(self, button):
         """Emits the rally started signal"""
         button_index = self.buttons.index(button)
+        print(f'Button index: {button_index}')
         self.shot_started.emit(button_index)
 
     def reset_buttons(self):
@@ -64,6 +70,7 @@ class PlayerSectionWidget(QWidget):
 
     def update_buttons(self, players):
         """Updates the text of the stack buttons"""
-        for idx, player in enumerate(unique_names([p.split()[0] for p in players])):
+        self.logger.debug(f"Updating player buttons: {json.dumps([p.to_dict() for p in players])}")
+        for idx, player in enumerate(unique_names([p.first_name for p in players])):
             self.buttons[idx].setText(player)
         

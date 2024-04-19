@@ -1,21 +1,22 @@
 from collections import Counter
 
+from .data import Score
+
+
 def next_score(score, winner):
     """Calculates the next score based on the current score and the winner of the point."""
-    server_score, returner_score, server_number = score
-
     if winner == 'server':
-        return (server_score + 1, returner_score, server_number)
+        return Score(score.server_score + 1, score.returner_score, score.server_number, score.serving_team)
 
-    elif all((winner == 'returner', server_number == 1)):
-        return (server_score, returner_score, 2)
+    elif all((winner == 'returner', score.server_number == 1)):
+        return Score(score.server_score, score.returner_score, 2, score.serving_team)
 
     else:
-        return (returner_score, server_score, 1)
+        return Score(score.returner_score, score.server_score, 1, 1 if score.serving_team == 0 else 0)
 
 def score_to_string(score):
     """Converts a score tuple to a string."""
-    return '-'.join([str(i) for i in score])
+    return '-'.join([str(i) for i in score.score_tuple()])
 
 
 def string_to_score(score_string):

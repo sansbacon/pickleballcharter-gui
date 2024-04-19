@@ -111,10 +111,24 @@ class Shot:
 
 
 @dataclass
+class Score:
+    """Data class for a score"""
+    server_score: int = None
+    returner_score: int = None
+    server_number: int = None
+    serving_team: int = None
+
+    def score_tuple(self):
+        return (self.server_score, self.returner_score, self.server_number)
+
+    def to_dict(self):
+        return asdict(self)
+
+@dataclass
 class Rally:
     """Data class for a rally
     Score is when the rally starts"""
-    rally_score: tuple = None
+    rally_score: Score = None
     rally_winner: str = None
     shots: List[Shot] = field(default_factory=list)
     stack: List[str] = field(default_factory=list)
@@ -128,7 +142,7 @@ class Rally:
 
     def to_dict(self):
         return {
-            "rally_score": self.rally_score,
+            "rally_score": self.rally_score.to_dict(),
             "shots": [shot.to_dict() for shot in self.shots],
             "rally_winner": self.rally_winner,
             "stack": self.stack

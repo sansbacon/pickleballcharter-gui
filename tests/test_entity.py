@@ -1,8 +1,8 @@
 import random
 import pytest
 
-from pbcgui.data import Game, Player, Team, Rally, Shot, ShotOutcomes, ShotTypes, ShotSides
-
+from pbcgui.data import *
+from pbcgui.utility import score_to_string, string_to_score
 
 @pytest.fixture
 def get_players():
@@ -117,3 +117,15 @@ def test_game_methods(get_players, get_shots):
     assert len(g.shots()) == 10
     assert g.winner() == 1
     assert g.winning_team() == team2
+
+# score
+def test_score():
+    s = Score(*[0, 0, 2, 0])
+    assert s.server_score == 0
+    assert s.returner_score == 0
+    assert s.server_number == 2
+    assert s.serving_team == 0
+
+def test_score_to_string():
+    s = Score(*[0, 0, 2, 0])
+    assert score_to_string(s) == '0-0-2'

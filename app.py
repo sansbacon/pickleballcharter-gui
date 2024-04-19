@@ -5,7 +5,7 @@ import sys
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 
 from config import user_data_dir, user_data_file
-from pbcgui.data import database_factory, Game, Rally, Shot, ShotTypes
+from pbcgui.data import database_factory, Game, Rally, Score, Shot, ShotTypes
 from pbcgui.palettes import AppPalette
 from pbcgui.widgets import *
 
@@ -52,7 +52,7 @@ class TouchscreenApp(QMainWindow):
         """Initialize the properties of the application"""
         self.current_game = Game()
         self.current_players = []
-        self.current_score = (0, 0, 2)
+        self.current_score = Score(*[0, 0, 2, 0])
         self.current_rally = Rally(rally_score=self.current_score)
         self.current_shot = Shot()
         self.db = database_factory(db_type='tinydb', db_path=user_data_dir / user_data_file)
@@ -105,7 +105,6 @@ class TouchscreenApp(QMainWindow):
         self.charting_widgets['winner'].rally_over.connect(self.add_rally_outcome)
         self.log_rally.connect(self.charting_widgets['log'].add_entity)
         self.charting_widgets['winner'].rally_over.connect(self.update_score)
-        self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_label)
         for key in ['side', 'shots', 'player', 'stack']:
             self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
 
@@ -173,16 +172,17 @@ class TouchscreenApp(QMainWindow):
         self.tab_widget.setCurrentIndex(1)
 
     def update_score(self, winner):
-        """Update the score and emits the score_changed signal"""
+        """Update the score in response to rally_over signal"""
         self.current_rally.rally_winner = winner
         self.current_game.rallies.append(self.current_rally)
         self.current_score = next_score(self.current_score, winner)
-        self.logger.debug(f"Score is now {self.current_score}")
+        self.logger.debug(f"Score is now {self.current_score.to_dict()}")
+        self.charting_widgets['score'].update_label(self.current_score)
         self.current_rally = Rally(rally_score=self.current_score)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     app = QApplication(sys.argv)
     window = TouchscreenApp()
     window.showMaximized()

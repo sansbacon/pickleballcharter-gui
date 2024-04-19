@@ -13,6 +13,7 @@ from pbcgui.widgets import *
 class TouchscreenApp(QMainWindow):
     """Main class for charting app"""
 
+    log_shot = Signal(Shot)
     log_rally = Signal(Rally)
 
     def __init__(self):
@@ -101,6 +102,8 @@ class TouchscreenApp(QMainWindow):
 
     def _rally_over_slots(self):
         """Connect signals for when the rally is over"""
+        self.charting_widgets['winner'].rally_over.connect(self.add_rally_outcome)
+        self.log_rally.connect(self.charting_widgets['log'].add_entity)
         self.charting_widgets['winner'].rally_over.connect(self.update_score)
         self.charting_widgets['winner'].rally_over.connect(self.charting_widgets['score'].update_label)
         for key in ['side', 'shots', 'player', 'stack']:
@@ -115,7 +118,7 @@ class TouchscreenApp(QMainWindow):
     def _shot_over_slots(self):
         """Connect signals for when the shot is over"""
         self.charting_widgets['outcome'].shot_over.connect(self.add_shot_outcome)
-        self.log_rally.connect(self.charting_widgets['log'].add_rally)
+        self.log_shot.connect(self.charting_widgets['log'].add_entity)
         for key in ['side', 'shots', 'player']:
             self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
 
@@ -130,11 +133,18 @@ class TouchscreenApp(QMainWindow):
         print(f'Add_player_to_db: {type(player)} {player}')
         self.db.add_players(player)
 
+    def add_rally_outcome(self, value):
+        """Add the rally outcome to the current rally"""
+        self.current_rally.rally_winner = value
+        self.current_game.rallies.append(self.current_rally)
+        self.log_rally.emit(self.current_rally)
+        self.current_rally = Rally()
+
     def add_shot_outcome(self, value):
         """Add the shot_outcome to the current shot"""
         self.current_shot.shot_outcome = value
         self.current_rally.shots.append(self.current_shot)
-        self.log_rally.emit(self.current_rally)
+        self.log_shot.emit(self.current_shot)
         self.current_shot = Shot()
 
     def add_shot_player(self, player_index):
@@ -164,9 +174,10 @@ class TouchscreenApp(QMainWindow):
 
     def update_score(self, winner):
         """Update the score and emits the score_changed signal"""
-        self.current_rally.winner = winner
+        self.current_rally.rally_winner = winner
         self.current_game.rallies.append(self.current_rally)
         self.current_score = next_score(self.current_score, winner)
+        self.logger.debug(f"Score is now {self.current_score}")
         self.current_rally = Rally(rally_score=self.current_score)
 
 

@@ -24,7 +24,7 @@ class LogWidget(QWidget):
 class RallyLogWidget(LogWidget):
     """A simple widget that logs text read only"""
 
-    def add_rally(self, rally):
-        text = json.dumps(rally.to_dict(), indent=4)
+    def add_entity(self, e):
+        text = json.dumps(e.to_dict(), indent=4)
         self.log_console.append(text)
         self.log_console.append("\n")

@@ -1,4 +1,7 @@
-from PySide6.QtCore import QDate, Signal
+import logging
+from typing import List
+
+from PySide6.QtCore import QDate, QObject, Signal
 
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout,
@@ -7,6 +10,7 @@ from PySide6.QtWidgets import (
     QComboBox, QMessageBox
 )
 
+from ..data import Player
 from .log import LogWidget
 from .player_dialog import PlayerDialog
 
@@ -27,10 +31,12 @@ class SetupGameWidget(QWidget):
         super().__init__()
         
         # instance variables
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
         self.log_widget = LogWidget()
         self.game_date_picker = QDateEdit()
         self.game_location_edit = QLineEdit()
-        self.existing_players = self.existing_players = sorted(players, key=lambda player: player.first_name)
+        self.existing_players = sorted(players, key=lambda player: player.first_name)
         self.player_combos = [self.create_player_combo() for _ in range(4)]
     
         # main layout
@@ -154,4 +160,6 @@ class SetupGameWidget(QWidget):
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Duplicated.")
             return
 
-        self.newGameRequested.emit(values)
+        new_game_players = [p for p in self.existing_players if p.full_name in values]
+        self.logger.debug(f'newGameRequested emitted List[Player]: {new_game_players}')
+        self.newGameRequested.emit(new_game_players)

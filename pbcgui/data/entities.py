@@ -65,7 +65,7 @@ class Player:
     nickname: str = None
     gender: str = None
     full_name: str = None
-    player_guid: str = str(uuid4())
+    player_guid: str = None
 
     def __post_init__(self):
         if not self.full_name:
@@ -73,6 +73,8 @@ class Player:
             if self.nickname:
                 name += f' ({self.nickname})'
             self.full_name = name
+        if not self.player_guid:
+            self.player_guid = str(uuid4())
 
     def to_dict(self):
         return asdict(self)
@@ -112,7 +114,7 @@ class Shot:
 class Rally:
     """Data class for a rally
     Score is when the rally starts"""
-    rally_score: tuple
+    rally_score: tuple = None
     rally_winner: str = None
     shots: List[Shot] = field(default_factory=list)
     stack: List[str] = field(default_factory=list)
@@ -136,12 +138,16 @@ class Rally:
 @dataclass
 class Game:
     """Data class for a game"""
-    game_guid: str = str(uuid4())
+    game_guid: str = None
     game_date: datetime = None
     game_location: str = None
     teams: List[Team] = field(default_factory=list)
     rallies: List[Rally] = field(default_factory=list)
     final_score: tuple = None # always team 1 then team 2
+
+    def __post_init__(self):
+        if not self.game_guid:
+            self.game_guid = str(uuid4())
 
     def players(self):
         return [player for team in self.teams for player in team.players]

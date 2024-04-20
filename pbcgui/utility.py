@@ -11,6 +11,11 @@ class StructuredMessage(object):
     def __str__(self):
         return json.dumps(self.kwargs)
 
+def game_over(score):
+    """Checks if the game is over based on the current score."""
+    return any((score.server_score >= 11 and score.server_score - score.returner_score >= 2,
+                score.returner_score >= 11 and score.returner_score - score.server_score >= 2))
+
 
 def next_score(score, winner):
     """Calculates the next score based on the current score and the winner of the point."""

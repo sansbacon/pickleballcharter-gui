@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 from config import user_data_dir, user_data_file
 from pbcgui.data import database_factory, Game, Rally, Score, Shot, ShotTypes
 from pbcgui.palettes import AppPalette
-from pbcgui.utility import StructuredMessage, next_score
+from pbcgui.utility import StructuredMessage, next_score, game_over
 from pbcgui.widgets import *
 
 m = StructuredMessage
@@ -19,6 +19,7 @@ class TouchscreenApp(QMainWindow):
 
     log_shot = Signal(Shot)
     log_rally = Signal(Rally)
+    initial_score = Signal(Score)
 
     def __init__(self):
         super().__init__()   
@@ -58,7 +59,7 @@ class TouchscreenApp(QMainWindow):
         """Initialize the properties of the application"""
         self.current_game = Game()
         self.current_players = []
-        self.current_score = Score(*[0, 0, 2, 0])
+        self.current_score = Score(*[10, 10, 2, 0])
         self.current_rally = Rally(rally_score=self.current_score)
         self.current_shot = Shot()
         self.db = database_factory(db_type='tinydb', db_path=user_data_dir / user_data_file)
@@ -105,6 +106,7 @@ class TouchscreenApp(QMainWindow):
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['player'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.charting_widgets['stack'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
+        self.initial_score.connect(self.charting_widgets['score'].update_label)
 
     def _rally_over_slots(self):
         """Connect signals for when the rally is over"""
@@ -134,9 +136,14 @@ class TouchscreenApp(QMainWindow):
         l = [p.to_dict() for p in self.current_players]
         self.setup_game_widget.log_widget.append(json.dumps(l, indent=4))
 
+    def add_game_to_db(self, game):
+        """Adds new game to the database"""
+        logging.debug(f'Add_game_to_db: {type(game)} {game}')
+        self.db.add_games(game)
+
     def add_player_to_db(self, player):
         """Adds new players to the database"""
-        print(f'Add_player_to_db: {type(player)} {player}')
+        logging.debug(f'Add_player_to_db: {type(player)} {player}')
         self.db.add_players(player)
 
     def add_rally_outcome(self, value):
@@ -148,11 +155,6 @@ class TouchscreenApp(QMainWindow):
         rd['game_guid'] = self.current_game.game_guid
         rd['player_guids'] = [p.player_guid for p in self.current_players]
         self.logger.info(m(**rd))
-
-        # move on to the next rally
-        self.current_game.rallies.append(self.current_rally)
-        self.log_rally.emit(self.current_rally)
-        self.current_rally = Rally()
 
     def add_shot_location(self, value):
         self.current_shot.shot_location = value
@@ -184,6 +186,7 @@ class TouchscreenApp(QMainWindow):
         self.current_game.game_location = self.setup_game_widget.game_location_edit.text()
         player_guids = [item.currentData() for item in self.setup_game_widget.player_combos]
         self.current_game.players = self.db.get_players(guids=player_guids)
+        self.initial_score.emit(self.current_score)
 
     def find_new_players(self):
         """Find the new players that have been added"""
@@ -198,9 +201,16 @@ class TouchscreenApp(QMainWindow):
         self.current_rally.rally_winner = winner
         self.current_game.rallies.append(self.current_rally)
         self.current_score = next_score(self.current_score, winner)
-        self.logger.debug(f"Score is now {self.current_score.to_dict()}")
-        self.charting_widgets['score'].update_label(self.current_score)
-        self.current_rally = Rally(rally_score=self.current_score)
+
+        # move on to the next rally or show the game over dialog
+        if game_over(self.current_score):
+            self.review_dialog = ReviewGameDialog(self.current_game)
+            self.review_dialog.show()
+            self.review_dialog.game_reviewed.connect(self.add_game_to_db)
+        else:
+            self.logger.debug(f"Score is now {self.current_score.to_dict()}")
+            self.charting_widgets['score'].update_label(self.current_score)
+            self.current_rally = Rally(rally_score=self.current_score)
 
     def validate_shot(self):
         """Validate the shot"""

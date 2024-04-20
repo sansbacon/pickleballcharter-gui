@@ -15,3 +15,4 @@ from .stack_section import StackSectionWidget
 # other
 from .menus import AppMenuBar
 from .log import LogWidget, RallyLogWidget
+from .review_game_dialog import ReviewGameDialog

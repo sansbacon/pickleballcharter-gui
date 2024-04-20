@@ -39,6 +39,14 @@ class ShotSides(ExtendedEnum):
     BACKHAND = 2
 
 
+class ShotLocations(ExtendedEnum):
+    LEFT_OUTER = 1
+    LEFT_INNER = 2
+    CENTER = 3
+    RIGHT_INNER = 4
+    RIGHT_OUTER = 5
+
+
 class ShotTypes(ExtendedEnum):
     SERVE = 1
     RETURN = 2
@@ -105,6 +113,7 @@ class Shot:
     shot_type: str = None
     shot_side: str = None
     shot_outcome: str = None
+    shot_location: str = None
 
     def to_dict(self):
         return asdict(self)

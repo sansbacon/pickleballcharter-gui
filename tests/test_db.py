@@ -41,5 +41,5 @@ if __name__ == '__main__':
     db = database_factory(db_type='tinydb', db_path=pth, storage=CachingMiddleware(BetterJSONStorage))
     #db.remove_all_games()
     #db.add_players(PLAYERS)
-    #print(db.get_players())
+    print(db.get_players())
     print(db.get_games())

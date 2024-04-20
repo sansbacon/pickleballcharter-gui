@@ -65,6 +65,7 @@ class TouchscreenApp(QMainWindow):
         self.db = database_factory(db_type='tinydb', db_path=user_data_dir / user_data_file)
         self.existing_players = self.db.get_players()
         self.games = []
+        self.game_reviewed = None
 
     def _initSlots(self):
         """Initialize the slots for the application"""
@@ -98,6 +99,7 @@ class TouchscreenApp(QMainWindow):
 
         # create the game dialog
         self.review_dialog = ReviewGameDialog(Game())            
+        self.review_dialog.game_reviewed.connect(self.process_game_reviewed)
 
     def _game_over_slots(self):
         """Connect signals for when the game is over"""
@@ -139,14 +141,25 @@ class TouchscreenApp(QMainWindow):
         l = [p.to_dict() for p in self.current_players]
         self.setup_game_widget.log_widget.append(json.dumps(l, indent=4))
 
-    def add_game_to_db(self, game: Game):
+    def process_game_reviewed(self, game_reviewed: bool):
         """Adds new game to the database"""
-        self.logger.debug(f'Add_game_to_db fired: {type(game)} {game}')
-        self.db.add_games(game)
+        self.logger.debug(f'Process game_review fired: {game_reviewed=}')
+        if game_reviewed:
+            self.db.add_games(self.current_game)
+            self.games.append(self.current_game)
+            self.current_game = Game()
+            self.current_players = []
+            self.current_score = Score(*[11, 10, 2, 0])
+            self.current_rally = Rally(rally_score=self.current_score)
+            self.current_shot = Shot()
+            self.setup_game_widget.clear()
+            self.tab_widget.setCurrentIndex(0)
+        else:
+            self.logger.debug("Game not reviewed")
 
     def add_player_to_db(self, player):
         """Adds new players to the database"""
-        #self.logger.debug(f'Add_player_to_db: {type(player)} {player}')
+        self.logger.debug(f'Add_player_to_db: {type(player)} {player}')
         self.db.add_players(player)
 
     def add_rally_outcome(self, value):
@@ -157,7 +170,6 @@ class TouchscreenApp(QMainWindow):
         rd = self.current_rally.to_dict()
         rd['game_guid'] = self.current_game.game_guid
         rd['player_guids'] = [p.player_guid for p in self.current_players]
-        #self.logger.info(m(**rd))
 
     def add_shot_location(self, value):
         self.current_shot.shot_location = value
@@ -213,14 +225,11 @@ class TouchscreenApp(QMainWindow):
         self.logger.debug(f'Game over? {go}')
         if go:
             self.logger.debug("Game is ovah!")
-            self.add_game_to_db(self.current_game)
-            logging.debug(self.db.get_games())
-            #self.review_dialog.set_game(self.current_game)
-            #self.review_dialog.exec()
-            #self.review_dialog.game_reviewed.connect(self.add_game_to_db)
+            self.review_dialog.set_game(self.current_game)
+            self.review_dialog.exec()
+                        
         else:
             self.logger.debug("Game is not over yet")
-            #self.logger.debug(f"Score is now {self.current_score.to_dict()}")
             self.charting_widgets['score'].update_label(self.current_score)
             self.current_rally = Rally(rally_score=self.current_score)
 

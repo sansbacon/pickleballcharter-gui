@@ -125,6 +125,14 @@ class SetupGameWidget(QWidget):
         self.add_player_dialog = PlayerDialog()
         self.add_player_dialog.player_added.connect(self.process_new_player)
 
+    def clear(self):
+        """Clears widget fields back to defaults."""
+        self.game_date_picker.setDate(QDate.currentDate())
+        self.game_location_edit.clear()
+        for lw in self.player_combos:
+            lw.setCurrentIndex(0)
+        self.log_widget.clear()
+
     def create_player_combo(self):
         """
         Create a QListWidget for each player.

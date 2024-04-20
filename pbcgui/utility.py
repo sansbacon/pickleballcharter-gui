@@ -1,6 +1,15 @@
 from collections import Counter
+import json
 
 from .data import Score
+
+
+class StructuredMessage(object):
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def __str__(self):
+        return json.dumps(self.kwargs)
 
 
 def next_score(score, winner):

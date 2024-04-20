@@ -1,5 +1,6 @@
 import json
 import logging
+import logging.handlers
 import sys
 
 from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
@@ -7,7 +8,10 @@ from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 from config import user_data_dir, user_data_file
 from pbcgui.data import database_factory, Game, Rally, Score, Shot, ShotTypes
 from pbcgui.palettes import AppPalette
+from pbcgui.utility import StructuredMessage
 from pbcgui.widgets import *
+
+m = StructuredMessage
 
 
 class TouchscreenApp(QMainWindow):
@@ -135,6 +139,14 @@ class TouchscreenApp(QMainWindow):
     def add_rally_outcome(self, value):
         """Add the rally outcome to the current rally"""
         self.current_rally.rally_winner = value
+
+        # now that rally is complete, add to log with additional info
+        rd = self.current_rally.to_dict()
+        rd['game_guid'] = self.current_game.game_guid
+        rd['player_guids'] = [p.player_guid for p in self.current_players]
+        self.logger.info(m(**rd))
+
+        # move on to the next rally
         self.current_game.rallies.append(self.current_rally)
         self.log_rally.emit(self.current_rally)
         self.current_rally = Rally()
@@ -149,6 +161,40 @@ class TouchscreenApp(QMainWindow):
             self.current_shot = Shot()
         else:
             QMessageBox.warning(self, "Invalid Shot", message, QMessageBox.Ok)
+
+    def add_shot_player(self, player_index):
+        """Add the player to the current shot"""
+        self.current_shot.player_guid = self.current_players[player_index].player_guid
+
+    def add_shot_side(self, value):
+        self.current_shot.shot_side = value
+
+    def add_shot_type(self, value):
+        self.current_shot.shot_type = value
+
+    def create_new_game(self):
+        # Read the tabs and fill out the game object
+        self.current_game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
+        self.current_game.game_location = self.setup_game_widget.game_location_edit.text()
+        player_guids = [item.currentData() for item in self.setup_game_widget.player_combos]
+        self.current_game.players = self.db.get_players(guids=player_guids)
+
+    def find_new_players(self):
+        """Find the new players that have been added"""
+        existing = [player.player_guid for player in self.existing_players]
+        return [p for p in self.current_players if p.player_guid not in existing]            
+
+    def switch_to_charting(self):
+        self.tab_widget.setCurrentIndex(1)
+
+    def update_score(self, winner):
+        """Update the score in response to rally_over signal"""
+        self.current_rally.rally_winner = winner
+        self.current_game.rallies.append(self.current_rally)
+        self.current_score = next_score(self.current_score, winner)
+        self.logger.debug(f"Score is now {self.current_score.to_dict()}")
+        self.charting_widgets['score'].update_label(self.current_score)
+        self.current_rally = Rally(rally_score=self.current_score)
 
     def validate_shot(self):
         """Validate the shot"""
@@ -188,44 +234,28 @@ class TouchscreenApp(QMainWindow):
             return (False, 'Should not have another shot after a winner or error - rally is over')
         return (True, None)
 
-    def add_shot_player(self, player_index):
-        """Add the player to the current shot"""
-        self.current_shot.player_guid = self.current_players[player_index].player_guid
-
-    def add_shot_side(self, value):
-        self.current_shot.shot_side = value
-
-    def add_shot_type(self, value):
-        self.current_shot.shot_type = value
-
-    def create_new_game(self):
-        # Read the tabs and fill out the game object
-        self.current_game.game_date = self.setup_game_widget.game_date_picker.date().toString('m-d-yyyy')
-        self.current_game.game_location = self.setup_game_widget.game_location_edit.text()
-        player_guids = [item.currentData() for item in self.setup_game_widget.player_combos]
-        self.current_game.players = self.db.get_players(guids=player_guids)
-
-    def find_new_players(self):
-        """Find the new players that have been added"""
-        existing = [player.player_guid for player in self.existing_players]
-        return [p for p in self.current_players if p.player_guid not in existing]            
-
-    def switch_to_charting(self):
-        self.tab_widget.setCurrentIndex(1)
-
-    def update_score(self, winner):
-        """Update the score in response to rally_over signal"""
-        self.current_rally.rally_winner = winner
-        self.current_game.rallies.append(self.current_rally)
-        self.current_score = next_score(self.current_score, winner)
-        self.logger.debug(f"Score is now {self.current_score.to_dict()}")
-        self.charting_widgets['score'].update_label(self.current_score)
-        self.current_rally = Rally(rally_score=self.current_score)
-
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+
+    # Create a logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)  # Set the logger level to the lowest level you want to log
+
+    # Create a handler for exceptions and errors
+    error_handler = logging.handlers.RotatingFileHandler(user_data_dir / 'pbcgui_errors.log', maxBytes=10*1024*1024, backupCount=3)
+    error_handler.setLevel(logging.ERROR)
+
+    # Create a handler for info
+    info_handler = logging.handlers.RotatingFileHandler(user_data_dir / 'pbcgui_rallies.log', maxBytes=10*1024*1024, backupCount=3)
+    info_handler.setLevel(logging.INFO)
+    info_handler.setFormatter(logging.Formatter('%(message)s'))
+
+    # Add handlers to the logger
+    logger.addHandler(error_handler)
+    logger.addHandler(info_handler)
+
     app = QApplication(sys.argv)
     window = TouchscreenApp()
     window.showMaximized()
     sys.exit(app.exec())
+

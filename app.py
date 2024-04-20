@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QTabWidget, QMainWindow, QApplication, QMessageBox
 from config import user_data_dir, user_data_file
 from pbcgui.data import database_factory, Game, Rally, Score, Shot, ShotTypes
 from pbcgui.palettes import AppPalette
-from pbcgui.utility import StructuredMessage
+from pbcgui.utility import StructuredMessage, next_score
 from pbcgui.widgets import *
 
 m = StructuredMessage
@@ -35,6 +35,7 @@ class TouchscreenApp(QMainWindow):
             "score": ScoreSectionWidget(),
             "stack": StackSectionWidget(),
             "side": ShotSideWidget(),
+            "location": ShotLocationWidget(),
             "outcome": ShotOutcomeWidget(),
             "shots": ChartingShotsWidget(shot_types=ShotTypes),
             "winner": RallyWinnerWidget(),
@@ -47,7 +48,8 @@ class TouchscreenApp(QMainWindow):
 
         self.charting_widgets['main'] = ChartingMainWidget(
                 self.charting_widgets['shots'], 
-                [self.charting_widgets['side'], self.charting_widgets['outcome'], self.charting_widgets['winner']]
+                [self.charting_widgets['side'], self.charting_widgets['location'], 
+                 self.charting_widgets['outcome'], self.charting_widgets['winner']]
         )
 
         self.charting_widgets['tab'] = ChartTabWidget(self.charting_widgets['sidebar'], self.charting_widgets['main'], self.charting_widgets['log'])
@@ -117,6 +119,7 @@ class TouchscreenApp(QMainWindow):
         self.charting_widgets['player'].shot_started.connect(self.add_shot_player)
         self.charting_widgets['shots'].shot_type.connect(self.add_shot_type)
         self.charting_widgets['side'].shot_side.connect(self.add_shot_side)
+        self.charting_widgets['location'].shot_location.connect(self.add_shot_location)
 
     def _shot_over_slots(self):
         """Connect signals for when the shot is over"""
@@ -150,6 +153,9 @@ class TouchscreenApp(QMainWindow):
         self.current_game.rallies.append(self.current_rally)
         self.log_rally.emit(self.current_rally)
         self.current_rally = Rally()
+
+    def add_shot_location(self, value):
+        self.current_shot.shot_location = value
 
     def add_shot_outcome(self, value):
         """Add the shot_outcome to the current shot"""

@@ -142,9 +142,51 @@ class TouchscreenApp(QMainWindow):
     def add_shot_outcome(self, value):
         """Add the shot_outcome to the current shot"""
         self.current_shot.shot_outcome = value
-        self.current_rally.shots.append(self.current_shot)
-        self.log_shot.emit(self.current_shot)
-        self.current_shot = Shot()
+        valid, message = self.validate_shot()
+        if valid:       
+            self.current_rally.shots.append(self.current_shot)
+            self.log_shot.emit(self.current_shot)
+            self.current_shot = Shot()
+        else:
+            QMessageBox.warning(self, "Invalid Shot", message, QMessageBox.Ok)
+
+    def validate_shot(self):
+        """Validate the shot"""
+        prev_shot = self.current_rally.shots[-1] if self.current_rally.shots else None
+
+        # shot should not have any empty attributes
+        for key, value in vars(self.current_shot).items():
+            if any((value is None, value == '')):
+                return (False, f'Shot has empty attributes {key=} {value=}')
+
+        # for first shot it should be the serve
+        if not prev_shot:
+            if self.current_shot.shot_type != '1 - SERVE':
+                return (False, f'First shot should be a serve: {self.current_shot.shot_type=}')
+            else:
+                return (True, None)
+        
+        # test that return follows serve
+        if prev_shot.shot_type == '1 - SERVE':
+            if self.current_shot.shot_type != '2 - RETURN':
+                return (False, f'Second shot should be a return: {self.current_shot.shot_type=}')
+        
+        # test that teams alternate
+        # get the index of the current player and the previous player
+        player_guids = [p.player_guid for p in self.current_players]
+        current_player = player_guids.index(self.current_shot.player_guid)
+        prev_player = player_guids.index(prev_shot.player_guid)
+
+        # now apply rules to ensure that the players alternate
+        if all((prev_player < 2, current_player < 2)):   
+            return (False, f'Players should alternate: {prev_player=} {current_player=}')
+        if all((prev_player >= 2, current_player >= 2)):   
+            return (False, f'Players should alternate: {prev_player=} {current_player=}')
+
+        # test that the rally is not already over
+        if prev_shot.shot_outcome != 'Continue':
+            return (False, 'Should not have another shot after a winner or error - rally is over')
+        return (True, None)
 
     def add_shot_player(self, player_index):
         """Add the player to the current shot"""

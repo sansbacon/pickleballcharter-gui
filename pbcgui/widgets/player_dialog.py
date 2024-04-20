@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtCore import Signal
 
 from PySide6.QtWidgets import (
@@ -13,6 +15,8 @@ class PlayerDialog(QDialog):
 
     def __init__(self):
         super().__init__()
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
         self.setWindowTitle("New Player")
         self.layout = QVBoxLayout()
 

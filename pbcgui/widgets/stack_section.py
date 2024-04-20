@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QButtonGroup, QGroupBox, QPushButton, QVBoxLayout, QWidget, QSizePolicy, QGridLayout
@@ -25,6 +27,9 @@ class StackSectionWidget(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
+
         layout = QVBoxLayout()   
         section = QGroupBox("Stack")
         section_layout = QGridLayout()

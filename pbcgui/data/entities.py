@@ -162,7 +162,7 @@ class Rally:
 class Game:
     """Data class for a game"""
     game_guid: str = None
-    game_date: datetime = None
+    game_date: str = None
     game_location: str = None
     teams: List[Team] = field(default_factory=list)
     rallies: List[Rally] = field(default_factory=list)

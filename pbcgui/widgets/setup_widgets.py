@@ -57,7 +57,7 @@ class SetupGameWidget(QWidget):
         game_date_label = QLabel("Game Date")
         self.game_date_picker.setDate(QDate.currentDate())
         self.game_date_picker.setCalendarPopup(True)
-        self.game_date_picker.setDisplayFormat("MMMM d, yyyy")
+        self.game_date_picker.setDisplayFormat("yyyy-MM-dd")
         info_section_layout.addWidget(game_date_label)
         info_section_layout.addWidget(self.game_date_picker)
 
@@ -161,5 +161,5 @@ class SetupGameWidget(QWidget):
             return
 
         new_game_players = [p for p in self.existing_players if p.full_name in values]
-        self.logger.debug(f'newGameRequested emitted List[Player]: {new_game_players}')
+        #self.logger.debug(f'newGameRequested emitted List[Player]: {new_game_players}')
         self.newGameRequested.emit(new_game_players)

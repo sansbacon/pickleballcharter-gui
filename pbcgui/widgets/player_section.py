@@ -59,7 +59,7 @@ class PlayerSectionWidget(QWidget):
     def emit_shot_started(self, button):
         """Emits the rally started signal"""
         button_index = self.buttons.index(button)
-        print(f'Button index: {button_index}')
+        #self.logger.debug(f'Button index: {button_index}')
         self.shot_started.emit(button_index)
 
     def reset_buttons(self):
@@ -70,7 +70,7 @@ class PlayerSectionWidget(QWidget):
 
     def update_buttons(self, players):
         """Updates the text of the stack buttons"""
-        self.logger.debug(f"Updating player buttons: {json.dumps([p.to_dict() for p in players])}")
+        #self.logger.debug(f"Updating player buttons: {json.dumps([p.to_dict() for p in players])}")
         for idx, player in enumerate(unique_names([p.first_name for p in players])):
             self.buttons[idx].setText(player)
         

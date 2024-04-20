@@ -1,11 +1,13 @@
 import json
+import logging
 
 from PySide6.QtCore import Signal
 
 from PySide6.QtWidgets import (
-    QVBoxLayout, QDialog, QTextEdit
+    QVBoxLayout, QDialog, QDialogButtonBox
 )
 
+from .log import LogWidget
 from ..data import Game
 
 
@@ -15,20 +17,43 @@ class ReviewGameDialog(QDialog):
 
     def __init__(self, game: Game):
         super().__init__()
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
         self.game = game
         self.setWindowTitle("Review Game")
         self.layout = QVBoxLayout()
 
         # Create a QTextEdit instance
-        self.game_json_edit = QTextEdit()
-        # Make the QTextEdit read-only
-        self.game_json_edit.setReadOnly(True)
-        # Convert the game object to JSON and set it as the text of the QTextEdit
-        self.game_json_edit.setText(json.dumps(self.game.to_dict(), indent=4))
+        self.log_widget = LogWidget("Game Rallies and Metadata:")
+        self.log_widget.append(json.dumps(game.to_dict(), indent=4))
 
         # Add the QTextEdit to the layout
-        self.layout.addWidget(self.game_json_edit)
+        self.layout.addWidget(self.log_widget)
 
-    def accept(self):
-        self.player_added.emit(self.game)
+        # Create a QDialogButtonBox with OK and Cancel buttons
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+
+        # Connect the accepted and rejected signals to the accept and reject slots
+        self.button_box.accepted.connect(self.on_accepted)
+        self.button_box.rejected.connect(self.on_rejected)
+
+        # Add the QDialogButtonBox to the layout
+        self.layout.addWidget(self.button_box)
+
+        # Set the layout of the dialog
+        self.setLayout(self.layout)
+
+    def on_accepted(self):
+        self.logger.debug(f'Game reviewed and accepted: {self.game}')
+        self.game_reviewed.emit(self.game)
         super().accept()
+
+    def on_rejected(self):
+        self.logger.debug(f'Game review rejected: {self.game}')
+        super().reject()
+
+    def set_game(self, game: Game):
+        self.game = game
+        self.logger.debug(f'Setting game for review: {game}')
+        self.log_widget.clear()
+        self.log_widget.append(json.dumps(game.to_dict(), indent=4))    

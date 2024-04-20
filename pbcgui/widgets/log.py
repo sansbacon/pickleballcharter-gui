@@ -20,6 +20,9 @@ class LogWidget(QWidget):
     def append(self, text):
         self.log_console.append(text)
 
+    def clear(self):
+        self.log_console.clear()
+
 
 class RallyLogWidget(LogWidget):
     """A simple widget that logs text read only"""

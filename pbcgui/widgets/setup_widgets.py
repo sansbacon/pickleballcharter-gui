@@ -95,10 +95,13 @@ class SetupGameWidget(QWidget):
         players_section_layout.addItem(QSpacerItem(5, 5, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         # now add player combos
+        combo_layout = QVBoxLayout()
         for idx, widget in enumerate(self.player_combos):
             player_label = QLabel(f"Player {idx + 1}")
-            players_section_layout.addWidget(player_label)
-            players_section_layout.addWidget(widget)
+            combo_layout.addWidget(player_label)
+            combo_layout.addWidget(widget)
+
+        players_section_layout.addLayout(combo_layout)
 
         # Add the section to the main layout
         left_column.addWidget(players_section)
@@ -158,7 +161,8 @@ class SetupGameWidget(QWidget):
 
     def validate_and_emit_new_game(self):
         """Validate the player names and emit the newGameRequested signal."""
-        values = [cb.currentText() for cb in self.player_combos]
+        values = [cb.currentData() for cb in self.player_combos]
+        self.logger.debug(f'Player Combos: {values}')
 
         if "" in values:
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Empty.")
@@ -168,6 +172,11 @@ class SetupGameWidget(QWidget):
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Duplicated.")
             return
 
-        new_game_players = [p for p in self.existing_players if p.full_name in values]
-        #self.logger.debug(f'newGameRequested emitted List[Player]: {new_game_players}')
+        new_game_players = []
+        for v in values:
+            for p in self.existing_players:
+                if p.player_guid == v:
+                    new_game_players.append(p)
+                    break
+        self.logger.debug(f'newGameRequested emitted List[Player]: {new_game_players}')
         self.newGameRequested.emit(new_game_players)

@@ -59,7 +59,7 @@ class TouchscreenApp(QMainWindow):
         """Initialize the properties of the application"""
         self.current_game = Game()
         self.current_players = []
-        self.current_score = Score(*[11, 10, 2, 0])
+        self.current_score = Score(*[0, 0, 2, 0])
         self.current_rally = Rally(rally_score=self.current_score)
         self.current_shot = Shot()
         self.db = database_factory(db_type='tinydb', db_path=user_data_dir / user_data_file)

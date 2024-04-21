@@ -43,6 +43,11 @@ class StackSectionWidget(QWidget):
         
         for idx, stacks in enumerate(self.stacks_possible):
             for jdx, stack in enumerate(stacks):
+                if stack == "No Stack":
+                    continue
+                    #button.setChecked(True)
+                    #section_layout.addWidget(button, 2, 0, 1, len(stacks))
+                
                 button = QPushButton(stack)
                 button.setCheckable(True)
                 button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -52,7 +57,6 @@ class StackSectionWidget(QWidget):
                 section_layout.addWidget(button, idx, jdx)
                 self.buttons.append(button)
                 self.button_group.addButton(button)
-
         self.setLayout(layout)  
 
     def reset_buttons(self):

@@ -65,7 +65,6 @@ class TouchscreenApp(QMainWindow):
         self.db = database_factory(db_type='tinydb', db_path=user_data_dir / user_data_file)
         self.existing_players = self.db.get_players()
         self.games = []
-        self.game_reviewed = None
 
     def _initSlots(self):
         """Initialize the slots for the application"""
@@ -141,22 +140,6 @@ class TouchscreenApp(QMainWindow):
         l = [p.to_dict() for p in self.current_players]
         self.setup_game_widget.log_widget.append(json.dumps(l, indent=4))
 
-    def process_game_reviewed(self, game_reviewed: bool):
-        """Adds new game to the database"""
-        self.logger.debug(f'Process game_review fired: {game_reviewed=}')
-        if game_reviewed:
-            self.db.add_games(self.current_game)
-            self.games.append(self.current_game)
-            self.current_game = Game()
-            self.current_players = []
-            self.current_score = Score(*[11, 10, 2, 0])
-            self.current_rally = Rally(rally_score=self.current_score)
-            self.current_shot = Shot()
-            self.setup_game_widget.clear()
-            self.tab_widget.setCurrentIndex(0)
-        else:
-            self.logger.debug("Game not reviewed")
-
     def add_player_to_db(self, player):
         """Adds new players to the database"""
         self.logger.debug(f'Add_player_to_db: {type(player)} {player}')
@@ -195,6 +178,16 @@ class TouchscreenApp(QMainWindow):
     def add_shot_type(self, value):
         self.current_shot.shot_type = value
 
+    def clear_charting_widgets(self):
+        """Clear the charting widgets"""
+        for key, widget in self.charting_widgets.items():
+            if hasattr(widget, 'reset_buttons'):
+                widget.reset_buttons()
+            elif hasattr(widget, 'clear'):
+                widget.clear()
+            else:
+                self.logger.debug(f'No clear method for {key}')
+
     def create_new_game(self):
         # Read the tabs and fill out the game object
         self.current_game.game_date = self.setup_game_widget.game_date_picker.date().toString('yyyy-MM-dd')
@@ -210,6 +203,30 @@ class TouchscreenApp(QMainWindow):
 
     def switch_to_charting(self):
         self.tab_widget.setCurrentIndex(1)
+
+    def process_game_reviewed(self, game_reviewed: bool):
+        """Adds new game to the database"""
+        self.logger.debug(f'Process game_review fired: {game_reviewed=}')
+        if game_reviewed:
+            # add the game to database
+            self.db.add_games(self.current_game)
+
+            # determine if you want to create a new game
+            button = QMessageBox.question(self, "Create New Game", "Would you like to create a new game?")
+
+            if button == QMessageBox.No:
+                self.logger.debug("New game not created")
+            else:
+                self.logger.debug("New game created")
+                self.games.append(self.current_game)
+                self.current_game = Game()
+                self.current_players = []
+                self.current_score = Score(*[0, 0, 2, 0])
+                self.current_rally = Rally(rally_score=self.current_score)
+                self.current_shot = Shot()
+                self.setup_game_widget.clear()
+                self.clear_charting_widgets()
+                self.tab_widget.setCurrentIndex(0)
 
     def update_score(self, winner):
         """Update the score in response to rally_over signal"""

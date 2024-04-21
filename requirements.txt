@@ -6,3 +6,4 @@ BetterJSONStorage
 numpy
 tabulate
 pandas
+click

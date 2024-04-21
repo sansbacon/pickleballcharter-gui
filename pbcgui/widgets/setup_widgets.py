@@ -57,7 +57,7 @@ class SetupGameWidget(QWidget):
         game_date_label = QLabel("Game Date")
         self.game_date_picker.setDate(QDate.currentDate())
         self.game_date_picker.setCalendarPopup(True)
-        self.game_date_picker.setDisplayFormat("MMMM d, yyyy")
+        self.game_date_picker.setDisplayFormat("yyyy-MM-dd")
         info_section_layout.addWidget(game_date_label)
         info_section_layout.addWidget(self.game_date_picker)
 
@@ -95,10 +95,13 @@ class SetupGameWidget(QWidget):
         players_section_layout.addItem(QSpacerItem(5, 5, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         # now add player combos
+        combo_layout = QVBoxLayout()
         for idx, widget in enumerate(self.player_combos):
             player_label = QLabel(f"Player {idx + 1}")
-            players_section_layout.addWidget(player_label)
-            players_section_layout.addWidget(widget)
+            combo_layout.addWidget(player_label)
+            combo_layout.addWidget(widget)
+
+        players_section_layout.addLayout(combo_layout)
 
         # Add the section to the main layout
         left_column.addWidget(players_section)
@@ -125,6 +128,14 @@ class SetupGameWidget(QWidget):
         self.add_player_dialog = PlayerDialog()
         self.add_player_dialog.player_added.connect(self.process_new_player)
 
+    def clear(self):
+        """Clears widget fields back to defaults."""
+        self.game_date_picker.setDate(QDate.currentDate())
+        self.game_location_edit.clear()
+        for lw in self.player_combos:
+            lw.setCurrentIndex(0)
+        self.log_widget.clear()
+
     def create_player_combo(self):
         """
         Create a QListWidget for each player.
@@ -150,7 +161,8 @@ class SetupGameWidget(QWidget):
 
     def validate_and_emit_new_game(self):
         """Validate the player names and emit the newGameRequested signal."""
-        values = [cb.currentText() for cb in self.player_combos]
+        values = [cb.currentData() for cb in self.player_combos]
+        self.logger.debug(f'Player Combos: {values}')
 
         if "" in values:
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Empty.")
@@ -160,6 +172,11 @@ class SetupGameWidget(QWidget):
             QMessageBox.warning(self, "Validation Error", "Player Names Cannot Be Duplicated.")
             return
 
-        new_game_players = [p for p in self.existing_players if p.full_name in values]
+        new_game_players = []
+        for v in values:
+            for p in self.existing_players:
+                if p.player_guid == v:
+                    new_game_players.append(p)
+                    break
         self.logger.debug(f'newGameRequested emitted List[Player]: {new_game_players}')
         self.newGameRequested.emit(new_game_players)

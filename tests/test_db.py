@@ -39,6 +39,7 @@ if __name__ == '__main__':
     
     pth = user_data_dir / user_data_file
     db = database_factory(db_type='tinydb', db_path=pth, storage=CachingMiddleware(BetterJSONStorage))
+    #db.remove_all_games()
     #db.add_players(PLAYERS)
     print(db.get_players())
-    
+    print(db.get_games())

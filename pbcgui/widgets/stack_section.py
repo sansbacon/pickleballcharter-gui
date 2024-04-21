@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QButtonGroup, QGroupBox, QPushButton, QVBoxLayout, QWidget, QSizePolicy, QGridLayout
@@ -25,6 +27,9 @@ class StackSectionWidget(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
+
         layout = QVBoxLayout()   
         section = QGroupBox("Stack")
         section_layout = QGridLayout()
@@ -38,6 +43,11 @@ class StackSectionWidget(QWidget):
         
         for idx, stacks in enumerate(self.stacks_possible):
             for jdx, stack in enumerate(stacks):
+                if stack == "No Stack":
+                    continue
+                    #button.setChecked(True)
+                    #section_layout.addWidget(button, 2, 0, 1, len(stacks))
+                
                 button = QPushButton(stack)
                 button.setCheckable(True)
                 button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -47,7 +57,6 @@ class StackSectionWidget(QWidget):
                 section_layout.addWidget(button, idx, jdx)
                 self.buttons.append(button)
                 self.button_group.addButton(button)
-
         self.setLayout(layout)  
 
     def reset_buttons(self):

@@ -11,7 +11,9 @@ from .charting_tab import ChartTabWidget
 from .player_section import PlayerSectionWidget
 from .score_section import ScoreSectionWidget
 from .stack_section import StackSectionWidget
+from .team_section import TeamSectionWidget
 
 # other
 from .menus import AppMenuBar
 from .log import LogWidget, RallyLogWidget
+from .review_game_dialog import ReviewGameDialog

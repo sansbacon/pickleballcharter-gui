@@ -124,6 +124,7 @@ class TouchscreenApp(QMainWindow):
         for key in ['side', 'shots', 'player', 'stack']:
             self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
         self.serving_team.connect(self.charting_widgets['team'].update_label)
+        self.charting_widgets['winner'].rally_over.connect(lambda: self.focus_on_next_widget('player'))
 
     def _shot_slots(self):
         """Connect signals for when the shot starts"""
@@ -142,7 +143,7 @@ class TouchscreenApp(QMainWindow):
         self.log_shot.connect(self.charting_widgets['log'].add_entity)
         for key in ['side', 'shots', 'player', 'location', 'stack']:
             self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
-        self.charting_widgets['outcome'].shot_over.connect(lambda: self.focus_on_next_widget('player'))
+        self.charting_widgets['outcome'].shot_over.connect(lambda: self.focus_on_next_widget('winner'))
 
     def add_current_players(self, players):
         """Add the current players to the game"""

@@ -3,6 +3,7 @@ from PySide6.QtGui import QKeySequence
 from PySide6.QtCore import Signal
 
 from ..data.entities import ShotTypes
+from .button_groups import ArrowKeyButtonGroup
 
 
 class ChartingShotsWidget(QWidget):
@@ -23,9 +24,9 @@ class ChartingShotsWidget(QWidget):
 
         self.buttons = []
 
+
         # Add shots buttons
-        self.button_group = QButtonGroup()
-        self.button_group.setExclusive(True)
+        self.button_group = ArrowKeyButtonGroup()
         for idx, shot_type in enumerate(shot_types):
             j = idx % 5
             i = idx // 5
@@ -68,6 +69,6 @@ class ChartingShotsWidget(QWidget):
 
     def reset_buttons(self):
         self.button_group.setExclusive(False)  # Disable autoExclusive
-        for button in self.button_group.buttons():
+        for button in self.button_group.buttons:
             button.setChecked(False)
         self.button_group.setExclusive(True)  # Enable autoExclusive

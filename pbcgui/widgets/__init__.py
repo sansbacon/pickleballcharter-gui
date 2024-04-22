@@ -17,3 +17,4 @@ from .team_section import TeamSectionWidget
 from .menus import AppMenuBar
 from .log import LogWidget, RallyLogWidget
 from .review_game_dialog import ReviewGameDialog
+from .button_groups import ArrowKeyButtonGroup

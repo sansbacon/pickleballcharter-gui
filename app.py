@@ -217,9 +217,9 @@ class TouchscreenApp(QMainWindow):
         else:
             raise ValueError(f'Invalid serving team (should be zero or one): {serving_team=}')
 
-        players = team.split(' and ')
-        player = players[0] if self.current_score.server_score % 2 == 0 else players[1]
-        self.serving_team.emit([player, team])
+        # determine correct server
+        server = self.get_server(serving_team)
+        self.serving_team.emit([server, team])
 
     def emit_initial_score(self):
         """Emit the initial score"""
@@ -233,6 +233,23 @@ class TouchscreenApp(QMainWindow):
     def focus_on_next_widget(self, widget_name):
         """Set focus on the button group in the next widget"""
         self.charting_widgets[widget_name].buttons[0].setFocus()
+
+    def get_server(self, serving_team):
+        """Determine the server name based on score and side"""
+        current_score = self.current_score.score_tuple()
+        server_number = current_score[2]
+        rally = self.current_rally
+
+        # handles beginning of the game
+        if not self.current_game.rallies:
+            return self.current_players[0]
+
+        # handle scenario for the first server
+        # need to know if this is the first serve in this turn
+        # something like previous_serving_team
+        if server_number == 1 and current_score[0] % 2 == 0:
+            server = self.current_players[serving_team * 2]
+            
 
     def switch_to_charting(self):
         self.tab_widget.setCurrentIndex(1)

@@ -59,7 +59,6 @@ class PlayerSectionWidget(QWidget):
     def emit_shot_started(self, button):
         """Emits the rally started signal"""
         button_index = self.buttons.index(button)
-        #self.logger.debug(f'Button index: {button_index}')
         self.shot_started.emit(button_index)
 
     def reset_buttons(self):

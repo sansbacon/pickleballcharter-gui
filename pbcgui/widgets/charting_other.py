@@ -60,25 +60,21 @@ class ShotLocationWidget(QWidget):
         layout.addWidget(section)
 
         # Side Buttons
-        #shortcuts = {'Winner': 'W', 'Continue': 'C', 'Error Unforced': 'U', 'Error Forced': 'E'}
         self.button_group = QButtonGroup()
         self.button_group.setExclusive(True)
         for location in ['LEFT_OUTSIDE', 'LEFT_INSIDE', 'CENTER', 'RIGHT_INSIDE', 'RIGHT_OUTSIDE']:
             button = QPushButton(location)
             button.setCheckable(True)
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-            #button.setShortcut(QKeySequence(shortcuts[effect]))
             section_layout.addWidget(button)
             self.button_group.addButton(button)
             self.buttons.append(button)
             
         self.setLayout(layout)
-        
         self.button_group.buttonClicked.connect(self.emit_shot_location)
         
     def emit_shot_location(self, button):
         self.shot_location.emit(button.text())
-        self.reset_buttons()
 
     def reset_buttons(self):
         self.button_group.setExclusive(False)  # Disable autoExclusive

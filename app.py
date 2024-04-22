@@ -128,16 +128,21 @@ class TouchscreenApp(QMainWindow):
     def _shot_slots(self):
         """Connect signals for when the shot starts"""
         self.charting_widgets['player'].shot_started.connect(self.add_shot_player)
+        self.charting_widgets['player'].shot_started.connect(lambda: self.focus_on_next_widget('shots'))
         self.charting_widgets['shots'].shot_type.connect(self.add_shot_type)
+        self.charting_widgets['shots'].shot_type.connect(lambda: self.focus_on_next_widget('side'))
         self.charting_widgets['side'].shot_side.connect(self.add_shot_side)
+        self.charting_widgets['side'].shot_side.connect(lambda: self.focus_on_next_widget('location'))
         self.charting_widgets['location'].shot_location.connect(self.add_shot_location)
+        self.charting_widgets['location'].shot_location.connect(lambda: self.focus_on_next_widget('outcome'))
 
     def _shot_over_slots(self):
         """Connect signals for when the shot is over"""
         self.charting_widgets['outcome'].shot_over.connect(self.add_shot_outcome)
         self.log_shot.connect(self.charting_widgets['log'].add_entity)
-        for key in ['side', 'shots', 'player']:
+        for key in ['side', 'shots', 'player', 'location', 'stack']:
             self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
+        self.charting_widgets['outcome'].shot_over.connect(lambda: self.focus_on_next_widget('player'))
 
     def add_current_players(self, players):
         """Add the current players to the game"""
@@ -225,8 +230,13 @@ class TouchscreenApp(QMainWindow):
         existing = [player.player_guid for player in self.existing_players]
         return [p for p in self.current_players if p.player_guid not in existing]            
 
+    def focus_on_next_widget(self, widget_name):
+        """Set focus on the button group in the next widget"""
+        self.charting_widgets[widget_name].buttons[0].setFocus()
+
     def switch_to_charting(self):
         self.tab_widget.setCurrentIndex(1)
+        self.focus_on_next_widget('player')
 
     def process_game_reviewed(self, game_reviewed: bool):
         """Adds new game to the database"""

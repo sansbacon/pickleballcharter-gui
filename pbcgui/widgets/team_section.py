@@ -13,11 +13,6 @@ class TeamSectionWidget(QWidget):
         layout.addWidget(section)
         self.labels = []
 
-        server_label = QLabel("Server 1")
-        server_label.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
-        section_layout.addWidget(server_label)
-        self.labels.append(server_label)
-
         team_label = QLabel("Team 1")
         team_label.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         section_layout.addWidget(team_label)
@@ -34,7 +29,8 @@ class TeamSectionWidget(QWidget):
             font.setPointSize(new_font_size)  # Set the new font size
             self.labels[idx].setFont(font)  # Apply the new font
 
-    def update_label(self, values):
+    def update_label(self, players):
         # Update the score based on the serving team
-        for idx, value in enumerate(values):
-            self.labels[idx].setText(value)
+        team = ' and '.join([p.first_name for p in players])
+        self.labels[0].setText(team)
+

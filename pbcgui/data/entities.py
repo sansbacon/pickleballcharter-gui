@@ -126,6 +126,7 @@ class Score:
     returner_score: int = None
     server_number: int = None
     serving_team: int = None
+    serving_player: int = None
 
     def score_tuple(self):
         return (self.server_score, self.returner_score, self.server_number)

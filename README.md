@@ -61,9 +61,17 @@ class Game:
   * trigger: new_game_button.clicked()
   * emitted by: validate_and_emit_new_game
   * slots:
-    * PlayerSectionWidget.update_buttons
-    * StackSectionWidget.update_buttons
+    * TouchscreenApp.add_current_players
     * TouchscreenApp.switch_to_charting
+    * TouchscreenApp.emit_score_signal
+    * TouchscreenApp.emit_player_sign
+
+
+            self.setup_game_widget.newGameRequested.connect(self.add_current_players)
+        self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
+        self.setup_game_widget.newGameRequested.connect(self.emit_score_signal)
+        self.setup_game_widget.newGameRequested.connect(self.emit_player_signal)
+
 
 * player_added
   * member of: PlayerDialog

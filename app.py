@@ -19,8 +19,9 @@ class TouchscreenApp(QMainWindow):
 
     log_shot = Signal(Shot)
     log_rally = Signal(Rally)
-    initial_score = Signal(Score)
-    serving_team = Signal(list)
+    players_signal = Signal(list)
+    score_signal = Signal(Score)
+    starting_score = Score(server_score=0, returner_score=0, server_number=2, serving_team=0, serving_player=0)
 
     def __init__(self):
         super().__init__()   
@@ -33,20 +34,23 @@ class TouchscreenApp(QMainWindow):
     def _create_widgets(self):
         """Create the widgets for the application"""
         self.charting_widgets = {
+            "location": ShotLocationWidget(),
+            "log": RallyLogWidget(),
+            "outcome": ShotOutcomeWidget(),
             "player": PlayerSectionWidget(),
             "score": ScoreSectionWidget(),
-            "stack": StackSectionWidget(),
             "side": ShotSideWidget(),
-            "location": ShotLocationWidget(),
-            "outcome": ShotOutcomeWidget(),
+            "stack": StackSectionWidget(),
             "shots": ChartingShotsWidget(shot_types=ShotTypes),
-            "winner": RallyWinnerWidget(),
-            "log": RallyLogWidget(),
             "team": TeamSectionWidget(),
+            "winner": RallyWinnerWidget(),
         }
 
         self.charting_widgets['sidebar'] =  ChartingSidebarWidget(
-            self.charting_widgets['player'], self.charting_widgets['score'], self.charting_widgets['stack'], self.charting_widgets['team']
+            self.charting_widgets['player'], 
+            self.charting_widgets['score'], 
+            self.charting_widgets['stack'], 
+            self.charting_widgets['team']
         )
 
         self.charting_widgets['main'] = ChartingMainWidget(
@@ -61,8 +65,10 @@ class TouchscreenApp(QMainWindow):
         """Initialize the properties of the application"""
         self.current_game = Game()
         self.current_players = []
-        self.current_score = Score(*[0, 0, 2, 0])
+        self.current_score = self.starting_score
+        self.previous_score = None
         self.current_rally = Rally(rally_score=self.current_score)
+        self.current_server = None
         self.current_shot = Shot()
         self.db = database_factory(db_type='tinydb', db_path=user_data_dir / user_data_file)
         self.existing_players = self.db.get_players()
@@ -73,6 +79,7 @@ class TouchscreenApp(QMainWindow):
         self.setup_game_widget.add_player_dialog.player_added.connect(self.add_player_to_db)
         self._game_over_slots()       
         self._new_game_slots()
+        self._rally_start_slots()
         self._rally_over_slots()
         self._shot_over_slots()
         self._shot_slots()
@@ -109,22 +116,24 @@ class TouchscreenApp(QMainWindow):
     def _new_game_slots(self):
         """Connect signals for when a new game is requested"""
         self.setup_game_widget.newGameRequested.connect(self.add_current_players)
-        self.setup_game_widget.newGameRequested.connect(self.charting_widgets['player'].update_buttons)
-        self.setup_game_widget.newGameRequested.connect(self.charting_widgets['stack'].update_buttons)
         self.setup_game_widget.newGameRequested.connect(self.switch_to_charting)
-        self.setup_game_widget.newGameRequested.connect(self.emit_initial_score)
-        self.setup_game_widget.newGameRequested.connect(self.emit_serving_team)
+        self.setup_game_widget.newGameRequested.connect(self.emit_score_signal)
+        self.setup_game_widget.newGameRequested.connect(self.emit_player_signal)
+
+    def _rally_start_slots(self):
+        """Slots for start of rally"""
+        self.score_signal.connect(self.charting_widgets['score'].update_label)
+        self.player_signal.connect(self.charting_widgets['player'].update_buttons)
+        self.player_signal.connect(self.charting_widgets['stack'].update_buttons)
 
     def _rally_over_slots(self):
         """Connect signals for when the rally is over"""
         self.charting_widgets['winner'].rally_over.connect(self.add_rally_outcome)
         self.log_rally.connect(self.charting_widgets['log'].add_entity)
         self.charting_widgets['winner'].rally_over.connect(self.update_score)
-        self.charting_widgets['winner'].rally_over.connect(self.emit_serving_team)
         for key in ['side', 'shots', 'player', 'stack']:
             self.charting_widgets['winner'].rally_over.connect(self.charting_widgets[key].reset_buttons)
-        self.serving_team.connect(self.charting_widgets['team'].update_label)
-
+        
     def _shot_slots(self):
         """Connect signals for when the shot starts"""
         self.charting_widgets['player'].shot_started.connect(self.add_shot_player)
@@ -206,24 +215,13 @@ class TouchscreenApp(QMainWindow):
         self.current_game.players = self.db.get_players(guids=player_guids)
         self.initial_score.emit(self.current_score)
 
-    def emit_serving_team(self):
-        """Emit the serving team"""
-        # figure out the serving team
-        serving_team = self.current_score.serving_team
-        if serving_team == 0:
-            team = f'{self.current_players[0].first_name} and {self.current_players[1].first_name}'
-        elif serving_team == 1:
-            team = f'{self.current_players[2].first_name} and {self.current_players[3].first_name}'
-        else:
-            raise ValueError(f'Invalid serving team (should be zero or one): {serving_team=}')
+    def emit_player_signal(self):
+        """Emit the players"""
+        self.player_signal.emit(self.current_players)
 
-        # determine correct server
-        server = self.get_server(serving_team)
-        self.serving_team.emit([server, team])
-
-    def emit_initial_score(self):
+    def emit_score_signal(self):
         """Emit the initial score"""
-        self.initial_score.emit(self.current_score)
+        self.score_signal.emit(self.current_score)
 
     def find_new_players(self):
         """Find the new players that have been added"""
@@ -233,27 +231,6 @@ class TouchscreenApp(QMainWindow):
     def focus_on_next_widget(self, widget_name):
         """Set focus on the button group in the next widget"""
         self.charting_widgets[widget_name].buttons[0].setFocus()
-
-    def get_server(self, serving_team):
-        """Determine the server name based on score and side"""
-        current_score = self.current_score.score_tuple()
-        server_number = current_score[2]
-        rally = self.current_rally
-
-        # handles beginning of the game
-        if not self.current_game.rallies:
-            return self.current_players[0]
-
-        # handle scenario for the first server
-        # need to know if this is the first serve in this turn
-        # something like previous_serving_team
-        if server_number == 1 and current_score[0] % 2 == 0:
-            server = self.current_players[serving_team * 2]
-            
-
-    def switch_to_charting(self):
-        self.tab_widget.setCurrentIndex(1)
-        self.focus_on_next_widget('player')
 
     def process_game_reviewed(self, game_reviewed: bool):
         """Adds new game to the database"""
@@ -279,6 +256,10 @@ class TouchscreenApp(QMainWindow):
                 self.clear_charting_widgets()
                 self.tab_widget.setCurrentIndex(0)
 
+    def switch_to_charting(self):
+        self.tab_widget.setCurrentIndex(1)
+        self.focus_on_next_widget('player')
+
     def update_score(self, winner):
         """Update the score in response to rally_over signal"""
         self.current_rally.rally_winner = winner
@@ -300,6 +281,13 @@ class TouchscreenApp(QMainWindow):
             self.logger.debug("Game is not over yet")
             self.charting_widgets['score'].update_label(self.current_score)
             self.current_rally = Rally(rally_score=self.current_score)
+
+    def update_server(self):
+        """Updates the server properties - need to think about this"""
+        if not self.game.rallies:
+            self.current_server = 0
+        else:
+            pass      
 
     def validate_shot(self):
         """Validate the shot"""

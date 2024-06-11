@@ -128,15 +128,23 @@ class TouchscreenApp(QMainWindow):
 
     def _shot_slots(self):
         """Connect signals for when the shot starts"""
-        self.charting_widgets['player'].shot_started.connect(self.add_shot_player)
-        self.charting_widgets['player'].shot_started.connect(lambda: self.focus_on_next_widget('shots'))
-        self.charting_widgets['shots'].shot_type.connect(self.add_shot_type)
-        self.charting_widgets['shots'].shot_type.connect(lambda: self.focus_on_next_widget('side'))
-        self.charting_widgets['side'].shot_side.connect(self.add_shot_side)
-        self.charting_widgets['side'].shot_side.connect(lambda: self.focus_on_next_widget('location'))
-        self.charting_widgets['location'].shot_location.connect(self.add_shot_location)
-        self.charting_widgets['location'].shot_location.connect(lambda: self.focus_on_next_widget('outcome'))
+        
+        mapping = {
+            'player': self.charting_widgets['player'].shot_started,
+            'shots': self.charting_widgets['shots'].shot_type,
+            'side': self.charting_widgets['side'].shot_side,
+            'location': self.charting_widgets['location'].shot_location,
+            'outcome': self.charting_widgets['outcome'].shot_outcome,
+        }
 
+        keys = list(mapping.keys())
+
+        for key, func in mapping.items():
+            func.connect(self.add_shot_detail)
+            idx = keys.index(key)
+            if idx < len(keys) - 1:
+                func.connect(lambda: self.focus_on_next_widget(keys[idx + 1]))
+            
     def _shot_over_slots(self):
         """Connect signals for when the shot is over"""
         self.charting_widgets['outcome'].shot_over.connect(self.add_shot_outcome)
@@ -144,6 +152,9 @@ class TouchscreenApp(QMainWindow):
         for key in ['side', 'shots', 'player', 'location', 'stack']:
             self.charting_widgets['outcome'].shot_over.connect(self.charting_widgets[key].reset_buttons)
         self.charting_widgets['outcome'].shot_over.connect(lambda: self.focus_on_next_widget('winner'))
+
+    def add_shot_detail(self, shot_detail):
+        setattr(self.current_shot, shot_detail[0], shot_detail[1])
 
     def add_current_players(self, players):
         """Add the current players to the game"""
@@ -165,9 +176,6 @@ class TouchscreenApp(QMainWindow):
         rd['game_guid'] = self.current_game.game_guid
         rd['player_guids'] = [p.player_guid for p in self.current_players]
 
-    def add_shot_location(self, value):
-        self.current_shot.shot_location = value
-
     def add_shot_outcome(self, value):
         """Add the shot_outcome to the current shot"""
         self.current_shot.shot_outcome = value
@@ -179,15 +187,10 @@ class TouchscreenApp(QMainWindow):
         else:
             QMessageBox.warning(self, "Invalid Shot", message, QMessageBox.Ok)
 
+    # TODO: address this specific functions *****
     def add_shot_player(self, player_index):
         """Add the player to the current shot"""
         self.current_shot.player_guid = self.current_players[player_index].player_guid
-
-    def add_shot_side(self, value):
-        self.current_shot.shot_side = value
-
-    def add_shot_type(self, value):
-        self.current_shot.shot_type = value
 
     def clear_charting_widgets(self):
         """Clear the charting widgets"""
